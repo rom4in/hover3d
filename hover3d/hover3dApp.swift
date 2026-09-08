@@ -9,9 +9,18 @@ import SwiftUI
 
 @main
 struct hover3dApp: App {
+
+  let model = DataModel()
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
-        }
+          ContentView()
+            .environmentObject(model)
+            .frame(minWidth: 800, minHeight: 500)
+        }.windowToolbarStyle(UnifiedWindowToolbarStyle())
     }
 }
+//
+//enum  Selection {
+//  case scene, export
+//}
