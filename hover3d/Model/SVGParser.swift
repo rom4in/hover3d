@@ -22,10 +22,15 @@ extension DataModel : XMLParserDelegate {
         mamaNode.name = "mamanode"
         currentNode = mamaNode
 
-      guard let height = attributeDict["height"], let width = attributeDict["width"] else { return }
-
-        svgSize.width = width.dropLast(2).description.cgFloat
-        svgSize.height = height.dropLast(2).description.cgFloat
+      if let viewBox = attributeDict["viewBox"] {
+        let values = svgNumbers(in: viewBox)
+        if values.count == 4 {
+          svgSize = CGSize(width: values[2], height: values[3])
+        }
+      } else if let height = attributeDict["height"], let width = attributeDict["width"] {
+        svgSize = CGSize(width: svgNumbers(in: width).first ?? 0,
+                         height: svgNumbers(in: height).first ?? 0)
+      }
 
     case "g":
 
@@ -34,24 +39,8 @@ extension DataModel : XMLParserDelegate {
         childNode.name = id.description
       }
 
-    if let transform = attributeDict["transform"] {
-      //print("transform : ",transform)
-      let instructions = transform.components(separatedBy: ") ")
-      print("instructions: ", instructions)
-
-      for instruction in instructions {
-        if instruction.prefix(10) == "translate(" {
-          let translation = instruction.dropFirst(10).description.components(separatedBy: ", ")
-          childNode.position.x += translation[0].cgFloat
-          let y = translation[1].replacingOccurrences(of: ")", with: "")
-          childNode.position.y -= y.cgFloat
-          print("translated x", translation[0].cgFloat, "y: ", y)
-        }
-        if instruction.prefix(7) == "rotate(" {
-          let rotationAngle = instruction.dropFirst(7).description
-          childNode.eulerAngles.z = -rotationAngle.cgFloat.degreesToRadians
-        }
-      }
+      if let transform = attributeDict["transform"] {
+        applySVGTransform(transform, to: childNode)
       }
 
       if let color = attributeDict["fill"] {
@@ -63,9 +52,12 @@ extension DataModel : XMLParserDelegate {
 
       currentNode.addChildNode(childNode)
       currentNode = childNode
-      currentNode.position.z = zOffset
+      // SVG groups are a 2D organisational hierarchy. Applying the layer
+      // offset to every nested group compounds Z depth in complex artwork.
+      // Geometry owns its extrusion depth; groups must remain at Z = 0.
 
-    case "path": createPathNode(attributes: attributeDict)
+    case "path":
+      createSVGPathNode(attributes: attributeDict)
     case "circle": createCircleNode(attributes: attributeDict)
     case "ellipse": createEllipseNode(attributes: attributeDict)
     case "rect": createRectNode(attributes: attributeDict)
@@ -97,4 +89,47 @@ extension DataModel : XMLParserDelegate {
     }
   }
 
+}
+
+private extension DataModel {
+  func svgNumbers(in string: String) -> [CGFloat] {
+    let pattern = #"[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?"#
+    guard let expression = try? NSRegularExpression(pattern: pattern) else { return [] }
+    let range = NSRange(string.startIndex..., in: string)
+    return expression.matches(in: string, range: range).compactMap {
+      Range($0.range, in: string).flatMap { CGFloat(Double(string[$0]) ?? 0) }
+    }
+  }
+
+  func applySVGTransform(_ transform: String, to node: SCNNode) {
+    let pattern = #"([A-Za-z]+)\s*\(([^)]*)\)"#
+    guard let expression = try? NSRegularExpression(pattern: pattern) else { return }
+    let range = NSRange(transform.startIndex..., in: transform)
+    for match in expression.matches(in: transform, range: range) {
+      guard let nameRange = Range(match.range(at: 1), in: transform),
+            let valuesRange = Range(match.range(at: 2), in: transform) else { continue }
+      let values = svgNumbers(in: String(transform[valuesRange]))
+      switch transform[nameRange].lowercased() {
+      case "translate":
+        guard let x = values.first else { continue }
+        node.position.x += x
+        node.position.y -= values.dropFirst().first ?? 0
+      case "scale":
+        guard let x = values.first else { continue }
+        let y = values.dropFirst().first ?? x
+        node.scale.x *= x
+        node.scale.y *= y
+      case "rotate":
+        if let degrees = values.first { node.eulerAngles.z -= degrees.degreesToRadians }
+      case "matrix":
+        guard values.count == 6 else { continue }
+        node.scale.x *= values[0]
+        node.scale.y *= values[3]
+        node.position.x += values[4]
+        node.position.y -= values[5]
+      default:
+        print("Ignoring unsupported SVG transform: \(transform[nameRange])")
+      }
+    }
+  }
 }

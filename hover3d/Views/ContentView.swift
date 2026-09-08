@@ -14,13 +14,17 @@ struct ContentView: View {
 
     var body: some View {
 
-      HStack {
+      HStack(spacing: 0) {
 
-        Editor().frame(width: 220)
+        Editor()
+          .frame(minWidth: 300, idealWidth: 300, maxWidth: 300, maxHeight: .infinity)
+          .background(Color(NSColor.windowBackgroundColor))
 
+        Divider()
 
         HoverView(sceneView: $model.sceneView)
-
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
+          .clipped()
           .onDrop(of: ["public.file-url"], isTargeted: $isDropping) { providers -> Bool in
             providers.first?.loadDataRepresentation(forTypeIdentifier: "public.file-url", completionHandler: { (data, error) in
               if let data = data, let path = NSString(data: data, encoding: 4), let url = URL(string: path as String) {
@@ -100,7 +104,7 @@ struct HoverView : NSViewRepresentable {
     sceneView.isJitteringEnabled = true
     sceneView.defaultCameraController.inertiaFriction = 0.18
     sceneView.antialiasingMode = .multisampling16X
-    sceneView.backgroundColor = .clear
+    sceneView.backgroundColor = .windowBackgroundColor
 
     return sceneView
   }

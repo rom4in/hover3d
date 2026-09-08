@@ -33,7 +33,9 @@ class DataModel : NSObject, ObservableObject {
   }
 
   func upOneLevel() {
-    currentNode = currentNode.parent!
+    if let parent = currentNode.parent {
+      currentNode = parent
+    }
   }
 
   func createRectNode(attributes: [String : String])  {
@@ -125,6 +127,48 @@ class DataModel : NSObject, ObservableObject {
     }
 
 
+  }
+
+  /// Tolerant SVG path import for modern SVG files. It supports absolute and
+  /// relative move, line, horizontal, vertical, cubic-curve and arc commands.
+  /// Arc segments are drawn as curves, preserving a visible filled silhouette.
+  func createSVGPathNode(attributes: [String: String]) {
+    guard let source = attributes["d"], let path = source.svgBezierPath else { return }
+    guard attributes["fill"] != "none" else { return }
+
+    let bounds = path.bounds
+    guard !bounds.isEmpty else { return }
+    let center = CGPoint(x: bounds.midX, y: bounds.midY)
+    path.transform(using: AffineTransform(translationByX: -center.x, byY: -center.y))
+    path.transform(using: AffineTransform(scaleByX: 1, byY: -1))
+
+    let shape = SCNShape(path: path, extrusionDepth: extrusion)
+    shape.chamferRadius = chamferRadius
+    shape.chamferMode = chamferMode
+    shape.chamferProfile = chamferProfile.getBezierPath()
+    if let fill = attributes["fill"], fill != "none" { currentMaterial = SCNMaterial(hex: fill) }
+    shape.materials = [currentMaterial]
+
+    let node = SCNNode(geometry: shape)
+    node.name = attributes["id"]
+    node.position = SCNVector3(center.x - svgSize.width / 2, svgSize.height / 2 - center.y, 0)
+    if let transform = attributes["transform"] { applyPathTransform(transform, to: node) }
+    currentNode.addChildNode(node)
+  }
+
+  private func applyPathTransform(_ transform: String, to node: SCNNode) {
+    let values = transform.svgNumberValues
+    if transform.contains("matrix"), values.count == 6 {
+      let sourceX = node.position.x + svgSize.width / 2
+      let sourceY = svgSize.height / 2 - node.position.y
+      node.scale.x *= values[0]
+      node.scale.y *= values[3]
+      node.position.x = sourceX * values[0] + values[4] - svgSize.width / 2
+      node.position.y = svgSize.height / 2 - (sourceY * values[3] + values[5])
+    } else if transform.contains("translate"), let x = values.first {
+      node.position.x += x
+      node.position.y -= values.dropFirst().first ?? 0
+    }
   }
 
   func createPolygonNode(attributes: [String : String]) {
@@ -311,7 +355,4 @@ class DataModel : NSObject, ObservableObject {
   }
 
 }
-
-
-
 

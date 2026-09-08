@@ -150,6 +150,76 @@ extension SCNView {
 }
 
 extension String {
+
+  var svgNumberValues: [CGFloat] {
+    let pattern = #"[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?"#
+    guard let expression = try? NSRegularExpression(pattern: pattern) else { return [] }
+    let range = NSRange(startIndex..., in: self)
+    return expression.matches(in: self, range: range).compactMap {
+      Range($0.range, in: self).flatMap { CGFloat(Double(self[$0]) ?? 0) }
+    }
+  }
+
+  var svgBezierPath: NSBezierPath? {
+    let pattern = #"[MmLlHhVvCcAaZz]|[-+]?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?"#
+    guard let expression = try? NSRegularExpression(pattern: pattern) else { return nil }
+    let range = NSRange(startIndex..., in: self)
+    let tokens = expression.matches(in: self, range: range).compactMap { Range($0.range, in: self).map { String(self[$0]) } }
+    guard !tokens.isEmpty else { return nil }
+
+    let path = NSBezierPath()
+    var index = 0
+    var command: Character = " "
+    var current = CGPoint.zero
+    var start = CGPoint.zero
+    func number() -> CGFloat? {
+      guard index < tokens.count, let value = Double(tokens[index]) else { return nil }
+      index += 1
+      return CGFloat(value)
+    }
+    func point(relative: Bool) -> CGPoint? {
+      guard let x = number(), let y = number() else { return nil }
+      return relative ? CGPoint(x: current.x + x, y: current.y + y) : CGPoint(x: x, y: y)
+    }
+
+    while index < tokens.count {
+      if let character = tokens[index].first, character.isLetter {
+        command = character
+        index += 1
+      }
+      let relative = command.isLowercase
+      switch command.lowercased() {
+      case "m":
+        guard let first = point(relative: relative) else { return nil }
+        path.move(to: first); current = first; start = first
+        command = relative ? "l" : "L" // remaining pairs are implicit lines
+      case "l":
+        guard let next = point(relative: relative) else { return nil }
+        path.line(to: next); current = next
+      case "h":
+        guard let x = number() else { return nil }
+        current.x = relative ? current.x + x : x; path.line(to: current)
+      case "v":
+        guard let y = number() else { return nil }
+        current.y = relative ? current.y + y : y; path.line(to: current)
+      case "c":
+        guard let c1 = point(relative: relative), let c2 = point(relative: relative), let end = point(relative: relative) else { return nil }
+        path.curve(to: end, controlPoint1: c1, controlPoint2: c2); current = end
+      case "a":
+        guard let rx = number(), let ry = number(), number() != nil, let large = number(), let sweep = number(), let end = point(relative: relative) else { return nil }
+        let midpoint = CGPoint(x: (current.x + end.x) / 2, y: (current.y + end.y) / 2)
+        let dx = end.x - current.x, dy = end.y - current.y
+        let direction: CGFloat = (sweep == 0 ? -1 : 1) * (large == 0 ? 0.5 : 1)
+        let control = CGPoint(x: midpoint.x - dy * 0.5 * direction + (rx - ry) * 0.05,
+                              y: midpoint.y + dx * 0.5 * direction)
+        path.curve(to: end, controlPoint1: control, controlPoint2: control); current = end
+      case "z":
+        path.close(); current = start; command = " "
+      default: return nil
+      }
+    }
+    return path
+  }
   
   func splitAtFirst(character : Character) -> [String.SubSequence] {
     return self.split(separator: character, maxSplits: 1, omittingEmptySubsequences: true)
