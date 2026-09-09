@@ -118,7 +118,7 @@ struct InspectorView: View {
     GroupBox(label: Text("Export")) {
       VStack(alignment: .leading, spacing: 12) {
         HStack(spacing: 6) {
-          TextField("Scene name", text: $model.fileName)
+          TextField("Scene name", text: fileNameBinding)
             .textFieldStyle(.roundedBorder)
           Text(".\(selectedExportFormat.fileExtension)")
             .foregroundColor(.textSecondary)
@@ -154,6 +154,13 @@ struct InspectorView: View {
         .buttonStyle(.bordered)
       }
     }
+  }
+
+  private var fileNameBinding: Binding<String> {
+    Binding(
+      get: { model.fileName },
+      set: { model.setFileName($0) }
+    )
   }
 
   private func openDiffuseImage() {

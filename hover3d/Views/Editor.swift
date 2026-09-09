@@ -62,7 +62,7 @@ struct Editor: View {
             GroupBox(model.selectedGeometryNode?.name ?? "Geometry") {
                 VStack(alignment: .leading, spacing: 14) {
                     SliderRow(title: "Extrusion", value: extrusionBinding)
-                    SliderRow(title: "Layer offset", value: layerOffsetBinding)
+                    SliderRow(title: "Layer offset", value: layerOffsetBinding, range: -100...100)
                     Text("Mode").font(.subheadline.weight(.medium))
                     ChamferModeSelector(mode: chamferModeBinding)
                     Text("Profile").font(.subheadline.weight(.medium))

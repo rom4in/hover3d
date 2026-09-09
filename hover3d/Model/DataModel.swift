@@ -43,6 +43,35 @@ class DataModel : NSObject, ObservableObject {
   @Published var fileName = "SceneShape"
   @Published var importedSVGImage: NSImage?
 
+  let undoManager = UndoManager()
+  @Published private(set) var undoState = 0
+
+  var canUndo: Bool { undoManager.canUndo }
+  var canRedo: Bool { undoManager.canRedo }
+
+  func undo() {
+    guard undoManager.canUndo else { return }
+    undoManager.undo()
+    undoState += 1
+  }
+
+  func redo() {
+    guard undoManager.canRedo else { return }
+    undoManager.redo()
+    undoState += 1
+  }
+
+  func setFileName(_ value: String) {
+    guard fileName != value else { return }
+    let oldValue = fileName
+    fileName = value
+    undoManager.registerUndo(withTarget: self) { target in
+      target.setFileName(oldValue)
+    }
+    undoManager.setActionName("Rename Scene")
+    undoState += 1
+  }
+
   var selectedMaterial: SCNMaterial? {
     guard let geometry = selectedGeometryNode?.geometry,
           geometry.materials.indices.contains(selectedMaterialIndex) else { return nil }
@@ -119,7 +148,7 @@ class DataModel : NSObject, ObservableObject {
 
   func updateSelectedLayerOffset(_ value: CGFloat) {
     updateSelectedGeometry { node, settings in
-      settings.layerOffset = min(max(value, 0), 100)
+      settings.layerOffset = min(max(value, -100), 100)
       node.position.z = settings.layerOffset
     }
   }
@@ -158,9 +187,42 @@ class DataModel : NSObject, ObservableObject {
   ) {
     guard let node = selectedGeometryNode,
           var settings = selectedGeometrySettings else { return }
+    let oldSettings = settings
     update(node, &settings)
+    guard settings.extrusion != oldSettings.extrusion ||
+          settings.layerOffset != oldSettings.layerOffset ||
+          settings.chamferMode != oldSettings.chamferMode ||
+          settings.chamferProfile != oldSettings.chamferProfile else { return }
+    registerGeometryChange(for: node, from: oldSettings, to: settings)
     geometrySettings[ObjectIdentifier(node)] = settings
     selectedGeometrySettings = settings
+  }
+
+  private func registerGeometryChange(
+    for node: SCNNode,
+    from oldSettings: GeometrySettings,
+    to newSettings: GeometrySettings
+  ) {
+    undoManager.registerUndo(withTarget: self) { target in
+      target.registerGeometryChange(for: node, from: newSettings, to: oldSettings)
+      target.applyGeometrySettings(newSettings, to: node)
+    }
+    undoManager.setActionName("Change Geometry")
+    undoState += 1
+  }
+
+  private func applyGeometrySettings(_ settings: GeometrySettings, to node: SCNNode) {
+    if let shape = node.geometry as? SCNShape {
+      shape.extrusionDepth = settings.extrusion
+      shape.chamferMode = settings.chamferMode
+      shape.chamferProfile = settings.chamferProfile.getBezierPath()
+    }
+    node.position.z = settings.layerOffset
+    geometrySettings[ObjectIdentifier(node)] = settings
+    if selectedGeometryNode === node {
+      selectedGeometrySettings = settings
+      refreshMaterialControls()
+    }
   }
 
   func selectMaterial(_ index: Int) {
@@ -171,31 +233,81 @@ class DataModel : NSObject, ObservableObject {
   }
 
   func setDiffuseColor(_ color: Color) {
+    guard let material = selectedMaterial else { return }
+    let oldContents = material.diffuse.contents
+    let oldImageName = materialImageName
     diffuseColor = color
-    selectedMaterial?.diffuse.contents = NSColor(color)
+    material.diffuse.contents = NSColor(color)
     materialImageName = nil
+    registerMaterialChange(material, oldContents: oldContents, oldImageName: oldImageName,
+                           newContents: material.diffuse.contents, newImageName: nil)
   }
 
   func setDiffuseImage(_ image: NSImage, named name: String) {
-    selectedMaterial?.diffuse.contents = image
+    guard let material = selectedMaterial else { return }
+    let oldContents = material.diffuse.contents
+    let oldImageName = materialImageName
+    material.diffuse.contents = image
     materialImageName = name
+    registerMaterialChange(material, oldContents: oldContents, oldImageName: oldImageName,
+                           newContents: image, newImageName: name)
   }
 
   func clearDiffuseImage() {
-    selectedMaterial?.diffuse.contents = NSColor(diffuseColor)
+    guard let material = selectedMaterial else { return }
+    let oldContents = material.diffuse.contents
+    let oldImageName = materialImageName
+    material.diffuse.contents = NSColor(diffuseColor)
     materialImageName = nil
+    registerMaterialChange(material, oldContents: oldContents, oldImageName: oldImageName,
+                           newContents: material.diffuse.contents, newImageName: nil)
   }
 
   func updateSelectedMetalness(_ value: CGFloat) {
     let clamped = min(max(value, 0), 1)
+    guard let material = selectedMaterial, metalness != clamped else { return }
+    let oldValue = metalness
     metalness = clamped
-    selectedMaterial?.metalness.contents = clamped
+    material.metalness.contents = clamped
+    registerNumericMaterialChange(material, keyPath: "metalness", from: oldValue, to: clamped)
   }
 
   func updateSelectedRoughness(_ value: CGFloat) {
     let clamped = min(max(value, 0), 1)
+    guard let material = selectedMaterial, roughness != clamped else { return }
+    let oldValue = roughness
     roughness = clamped
-    selectedMaterial?.roughness.contents = clamped
+    material.roughness.contents = clamped
+    registerNumericMaterialChange(material, keyPath: "roughness", from: oldValue, to: clamped)
+  }
+
+  private func registerMaterialChange(_ material: SCNMaterial, oldContents: Any?, oldImageName: String?,
+                                      newContents: Any?, newImageName: String?) {
+    undoManager.registerUndo(withTarget: self) { target in
+      target.registerMaterialChange(material, oldContents: newContents, oldImageName: newImageName,
+                                    newContents: oldContents, newImageName: oldImageName)
+      material.diffuse.contents = oldContents
+      target.materialImageName = oldImageName
+      target.refreshMaterialControls()
+    }
+    undoManager.setActionName("Change Material")
+    undoState += 1
+  }
+
+  private func registerNumericMaterialChange(_ material: SCNMaterial, keyPath: String,
+                                             from oldValue: CGFloat, to newValue: CGFloat) {
+    undoManager.registerUndo(withTarget: self) { target in
+      target.registerNumericMaterialChange(material, keyPath: keyPath, from: newValue, to: oldValue)
+      if keyPath == "metalness" {
+        material.metalness.contents = oldValue
+        target.metalness = oldValue
+      } else {
+        material.roughness.contents = oldValue
+        target.roughness = oldValue
+      }
+    }
+    undoManager.setActionName("Change Material")
+    undoState += 1
   }
 
   private func refreshMaterialControls() {
@@ -551,7 +663,7 @@ class DataModel : NSObject, ObservableObject {
 
 
     currentNode.addChildNode(node)
-    node.position.z = 1
+    node.position.z = 0
   }
 
 }
