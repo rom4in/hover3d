@@ -1,17 +1,15 @@
-//
-//  DataModel.swift
-//  hover3d
-//
-//  Created by BigMac on 03/12/2020.
-//
-
-
 import SwiftUI
 import SceneKit
 
 class DataModel : NSObject, ObservableObject {
 
   static let materialNames = ["front", "back", "side", "edge"]
+
+  struct MaterialColorPreset: Identifiable {
+    let id: String
+    let name: String
+    let color: Color
+  }
 
   @Published var sceneView = SCNView()
   @Published var mamaNode = SCNNode()
@@ -29,7 +27,7 @@ class DataModel : NSObject, ObservableObject {
   @Published var selectedMaterialIndex = 0
   @Published var selectedGeometryNode: SCNNode?
   @Published var materialImageName: String?
-  @Published var materialPanelExpanded = false
+  @Published var inspectorPresented = false
 
   @Published var svgSize = CGSize()
   @Published var fileName = "SceneShape"
@@ -39,6 +37,39 @@ class DataModel : NSObject, ObservableObject {
     guard let geometry = selectedGeometryNode?.geometry,
           geometry.materials.indices.contains(selectedMaterialIndex) else { return nil }
     return geometry.materials[selectedMaterialIndex]
+  }
+
+  var geometryNodes: [SCNNode] {
+    var nodes: [SCNNode] = []
+
+    func appendGeometryNodes(from node: SCNNode) {
+      if node.geometry != nil {
+        nodes.append(node)
+      }
+      node.childNodes.forEach(appendGeometryNodes)
+    }
+
+    appendGeometryNodes(from: mamaNode)
+    return nodes
+  }
+
+  var materialColorPresets: [MaterialColorPreset] {
+    guard let materials = selectedGeometryNode?.geometry?.materials else { return [] }
+
+    var seenColors = Set<String>()
+    return materials.enumerated().compactMap { index, material in
+      guard let nsColor = material.diffuse.contents as? NSColor,
+            let rgbColor = nsColor.usingColorSpace(.deviceRGB) else { return nil }
+
+      let key = [rgbColor.redComponent, rgbColor.greenComponent, rgbColor.blueComponent,
+                 rgbColor.alphaComponent]
+        .map { String(format: "%.4f", $0) }
+        .joined(separator: ",")
+      guard seenColors.insert(key).inserted else { return nil }
+
+      let materialName = material.name ?? (Self.materialNames.indices.contains(index) ? Self.materialNames[index] : "Material")
+      return MaterialColorPreset(id: key, name: materialName, color: Color(nsColor: nsColor))
+    }
   }
 
   func materials(from source: SCNMaterial) -> [SCNMaterial] {
@@ -64,14 +95,14 @@ class DataModel : NSObject, ObservableObject {
     ensureFourMaterials(in: node)
     selectedGeometryNode = node
     selectedMaterialIndex = min(max(index ?? selectedMaterialIndex, 0), Self.materialNames.count - 1)
-    materialPanelExpanded = true
+    inspectorPresented = true
     refreshMaterialControls()
   }
 
   func selectMaterial(_ index: Int) {
     guard Self.materialNames.indices.contains(index) else { return }
     selectedMaterialIndex = index
-    materialPanelExpanded = true
+    inspectorPresented = true
     refreshMaterialControls()
   }
 

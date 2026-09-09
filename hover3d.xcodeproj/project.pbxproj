@@ -15,9 +15,19 @@
 		1AA8DC1D2578D9250031FEE6 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA8DC1C2578D9250031FEE6 /* Extensions.swift */; };
 		1AA8DC202578D9E20031FEE6 /* Editor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA8DC1F2578D9E20031FEE6 /* Editor.swift */; };
 		1AA8DC232578DA960031FEE6 /* ShareMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA8DC222578DA960031FEE6 /* ShareMenu.swift */; };
-		1AA8DC262578DAEC0031FEE6 /* ChamferModeSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA8DC252578DAEC0031FEE6 /* ChamferModeSelector.swift */; };
 		1AA8DC2B2578DC950031FEE6 /* SVGParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA8DC2A2578DC950031FEE6 /* SVGParser.swift */; };
 		1AA8DC302578DDC20031FEE6 /* art.scnassets in Resources */ = {isa = PBXBuildFile; fileRef = 1AA8DC2F2578DDC20031FEE6 /* art.scnassets */; };
+		1AA8DC312578DE000031FEE6 /* ChamferButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA8DC352578DE000031FEE6 /* ChamferButtonStyle.swift */; };
+		1AA8DC322578DE000031FEE6 /* ChamferModeSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA8DC362578DE000031FEE6 /* ChamferModeSelector.swift */; };
+		1AA8DC332578DE000031FEE6 /* ChamferProfileSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA8DC372578DE000031FEE6 /* ChamferProfileSelector.swift */; };
+		1AA8DC342578DE000031FEE6 /* ChamferProfileType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA8DC382578DE000031FEE6 /* ChamferProfileType.swift */; };
+		7A2E1D010000000000000001 /* ExportFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2E1D010000000000000011 /* ExportFormat.swift */; };
+		7A2E1D010000000000000002 /* InspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2E1D010000000000000012 /* InspectorView.swift */; };
+		7A2E1D010000000000000003 /* SliderRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2E1D010000000000000013 /* SliderRow.swift */; };
+		7A2E1D010000000000000004 /* PreciseSliderRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2E1D010000000000000014 /* PreciseSliderRow.swift */; };
+		7A2E1D010000000000000005 /* ValueBubbleSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2E1D010000000000000015 /* ValueBubbleSlider.swift */; };
+		E8B269C83051AA36006FBEE8 /* HoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8B269C73051AA36006FBEE8 /* HoverView.swift */; };
+		E8B269CB3051BB02006FBEE8 /* MaterialSlotButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8B269CA3051BB02006FBEE8 /* MaterialSlotButtonStyle.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,9 +42,19 @@
 		1AA8DC1C2578D9250031FEE6 /* Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		1AA8DC1F2578D9E20031FEE6 /* Editor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Editor.swift; sourceTree = "<group>"; };
 		1AA8DC222578DA960031FEE6 /* ShareMenu.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ShareMenu.swift; sourceTree = "<group>"; };
-		1AA8DC252578DAEC0031FEE6 /* ChamferModeSelector.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChamferModeSelector.swift; sourceTree = "<group>"; };
 		1AA8DC2A2578DC950031FEE6 /* SVGParser.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SVGParser.swift; sourceTree = "<group>"; };
 		1AA8DC2F2578DDC20031FEE6 /* art.scnassets */ = {isa = PBXFileReference; lastKnownFileType = wrapper.scnassets; path = art.scnassets; sourceTree = "<group>"; };
+		1AA8DC352578DE000031FEE6 /* ChamferButtonStyle.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChamferButtonStyle.swift; sourceTree = "<group>"; };
+		1AA8DC362578DE000031FEE6 /* ChamferModeSelector.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChamferModeSelector.swift; sourceTree = "<group>"; };
+		1AA8DC372578DE000031FEE6 /* ChamferProfileSelector.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChamferProfileSelector.swift; sourceTree = "<group>"; };
+		1AA8DC382578DE000031FEE6 /* ChamferProfileType.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChamferProfileType.swift; sourceTree = "<group>"; };
+		7A2E1D010000000000000011 /* ExportFormat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportFormat.swift; sourceTree = "<group>"; };
+		7A2E1D010000000000000012 /* InspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectorView.swift; sourceTree = "<group>"; };
+		7A2E1D010000000000000013 /* SliderRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SliderRow.swift; sourceTree = "<group>"; };
+		7A2E1D010000000000000014 /* PreciseSliderRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreciseSliderRow.swift; sourceTree = "<group>"; };
+		7A2E1D010000000000000015 /* ValueBubbleSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ValueBubbleSlider.swift; sourceTree = "<group>"; };
+		E8B269C73051AA36006FBEE8 /* HoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HoverView.swift; sourceTree = "<group>"; };
+		E8B269CA3051BB02006FBEE8 /* MaterialSlotButtonStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaterialSlotButtonStyle.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -69,6 +89,7 @@
 			children = (
 				1AA8DC082578D8500031FEE6 /* hover3dApp.swift */,
 				1AA8DC292578DC810031FEE6 /* Views */,
+				E8B269C93051B62C006FBEE8 /* Styles */,
 				1AA8DC282578DC780031FEE6 /* Model */,
 				1AA8DC2D2578DCA40031FEE6 /* Utils */,
 				1AA8DC0C2578D8510031FEE6 /* Assets.xcassets */,
@@ -91,6 +112,8 @@
 		1AA8DC282578DC780031FEE6 /* Model */ = {
 			isa = PBXGroup;
 			children = (
+				7A2E1D010000000000000011 /* ExportFormat.swift */,
+				1AA8DC382578DE000031FEE6 /* ChamferProfileType.swift */,
 				1AA8DC192578D90C0031FEE6 /* DataModel.swift */,
 				1AA8DC2A2578DC950031FEE6 /* SVGParser.swift */,
 			);
@@ -101,8 +124,14 @@
 			isa = PBXGroup;
 			children = (
 				1AA8DC0A2578D8500031FEE6 /* ContentView.swift */,
-				1AA8DC252578DAEC0031FEE6 /* ChamferModeSelector.swift */,
+				1AA8DC362578DE000031FEE6 /* ChamferModeSelector.swift */,
+				1AA8DC372578DE000031FEE6 /* ChamferProfileSelector.swift */,
 				1AA8DC1F2578D9E20031FEE6 /* Editor.swift */,
+				7A2E1D010000000000000012 /* InspectorView.swift */,
+				7A2E1D010000000000000013 /* SliderRow.swift */,
+				7A2E1D010000000000000014 /* PreciseSliderRow.swift */,
+				7A2E1D010000000000000015 /* ValueBubbleSlider.swift */,
+				E8B269C73051AA36006FBEE8 /* HoverView.swift */,
 				1AA8DC222578DA960031FEE6 /* ShareMenu.swift */,
 			);
 			path = Views;
@@ -114,6 +143,15 @@
 				1AA8DC1C2578D9250031FEE6 /* Extensions.swift */,
 			);
 			path = Utils;
+			sourceTree = "<group>";
+		};
+		E8B269C93051B62C006FBEE8 /* Styles */ = {
+			isa = PBXGroup;
+			children = (
+				E8B269CA3051BB02006FBEE8 /* MaterialSlotButtonStyle.swift */,
+				1AA8DC352578DE000031FEE6 /* ChamferButtonStyle.swift */,
+			);
+			path = Styles;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -187,13 +225,23 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1AA8DC262578DAEC0031FEE6 /* ChamferModeSelector.swift in Sources */,
+				1AA8DC312578DE000031FEE6 /* ChamferButtonStyle.swift in Sources */,
+				1AA8DC322578DE000031FEE6 /* ChamferModeSelector.swift in Sources */,
+				1AA8DC332578DE000031FEE6 /* ChamferProfileSelector.swift in Sources */,
+				1AA8DC342578DE000031FEE6 /* ChamferProfileType.swift in Sources */,
+				7A2E1D010000000000000001 /* ExportFormat.swift in Sources */,
 				1AA8DC232578DA960031FEE6 /* ShareMenu.swift in Sources */,
 				1AA8DC0B2578D8500031FEE6 /* ContentView.swift in Sources */,
 				1AA8DC092578D8500031FEE6 /* hover3dApp.swift in Sources */,
 				1AA8DC1A2578D90C0031FEE6 /* DataModel.swift in Sources */,
 				1AA8DC1D2578D9250031FEE6 /* Extensions.swift in Sources */,
+				E8B269C83051AA36006FBEE8 /* HoverView.swift in Sources */,
 				1AA8DC202578D9E20031FEE6 /* Editor.swift in Sources */,
+				7A2E1D010000000000000002 /* InspectorView.swift in Sources */,
+				7A2E1D010000000000000003 /* SliderRow.swift in Sources */,
+				E8B269CB3051BB02006FBEE8 /* MaterialSlotButtonStyle.swift in Sources */,
+				7A2E1D010000000000000004 /* PreciseSliderRow.swift in Sources */,
+				7A2E1D010000000000000005 /* ValueBubbleSlider.swift in Sources */,
 				1AA8DC2B2578DC950031FEE6 /* SVGParser.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

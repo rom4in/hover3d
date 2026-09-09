@@ -20,7 +20,3 @@ struct hover3dApp: App {
         }.windowToolbarStyle(UnifiedWindowToolbarStyle())
     }
 }
-//
-//enum  Selection {
-//  case scene, export
-//}
