@@ -2,7 +2,7 @@ import SwiftUI
 import SceneKit
 import UniformTypeIdentifiers
 
-struct MaterialPanel: View {
+struct InspectorView: View {
   @EnvironmentObject var model: DataModel
   @State private var isSharing = false
   @State private var shareURL: URL?
@@ -10,34 +10,15 @@ struct MaterialPanel: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 12) {
-      HStack {
-        if model.materialPanelExpanded {
-          Text("Material").font(.title3.weight(.semibold))
-          Spacer()
-        }
-        Button {
-          withAnimation(.easeInOut(duration: 0.2)) {
-            model.materialPanelExpanded.toggle()
-          }
-        } label: {
-          Image(systemName: model.materialPanelExpanded ? "chevron.right" : "chevron.left")
-            .frame(width: 24, height: 24)
-        }
-        .buttonStyle(.borderless)
-        .help(model.materialPanelExpanded ? "Collapse materials" : "Expand materials")
-      }
+        Text("Material").font(.title3.weight(.semibold))
+            .frame(maxWidth: .infinity, alignment: .leading)
 
-      if model.materialPanelExpanded {
-        materialControls
-      }
-      Spacer()
-      if model.materialPanelExpanded {
-        exportControls
-      }
+      materialControls
+      Spacer(minLength: 12)
+      exportControls
     }
     .padding(16)
     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-    .background(Color(NSColor.windowBackgroundColor))
     .overlay(
       ShareMenu(isPresented: $isSharing, sharingItems: shareItems)
         .allowsHitTesting(isSharing)
@@ -54,7 +35,7 @@ struct MaterialPanel: View {
     VStack(alignment: .leading, spacing: 12) {
       Text(model.selectedGeometryNode?.name ?? "Click a shape to select it")
         .font(.caption)
-        .foregroundColor(.secondary)
+        .foregroundColor(.textSecondary)
 
       HStack(spacing: 6) {
         ForEach(Array(DataModel.materialNames.enumerated()), id: \.offset) { index, name in
@@ -99,7 +80,7 @@ struct MaterialPanel: View {
         HStack(spacing: 6) {
           TextField("Scene name", text: $model.fileName)
             .textFieldStyle(.roundedBorder)
-          Text(".\(selectedExportFormat.fileExtension)").foregroundColor(.secondary)
+          Text(".\(selectedExportFormat.fileExtension)").foregroundColor(.textSecondary)
         }
         HStack {
           Text("Format")
@@ -115,7 +96,7 @@ struct MaterialPanel: View {
         }
         Text(selectedExportFormat.summary)
           .font(.caption)
-          .foregroundColor(.secondary)
+          .foregroundColor(.textSecondary)
           .fixedSize(horizontal: false, vertical: true)
         HStack {
           Button(action: exportSelectedFormat) {
@@ -204,18 +185,14 @@ struct MaterialPanel: View {
   }
 }
 
-private struct MaterialSlotButtonStyle: ButtonStyle {
-  let isSelected: Bool
 
-  func makeBody(configuration: Configuration) -> some View {
-    configuration.label
-      .font(.caption.weight(.medium))
-      .padding(.horizontal, 8)
-      .padding(.vertical, 6)
-      .frame(maxWidth: .infinity)
-      .background(isSelected ? Color.accentColor : Color.secondary.opacity(0.12))
-      .foregroundColor(isSelected ? .white : .primary)
-      .clipShape(RoundedRectangle(cornerRadius: 6))
-      .opacity(configuration.isPressed ? 0.75 : 1)
-  }
+
+#Preview {
+    
+    Color.white
+        .inspector(isPresented: .constant(true)) {
+        InspectorView()
+          .inspectorColumnWidth(min: 280, ideal: 320, max: 420)
+          .environmentObject(DataModel())
+      }
 }

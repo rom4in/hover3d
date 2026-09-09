@@ -1,23 +1,26 @@
 import SwiftUI
 
 struct ChamferButtonStyle: ButtonStyle {
+  var isSelected = false
+
   func makeBody(configuration: Configuration) -> some View {
-    HoverableButton(configuration: configuration)
+    HoverableButton(configuration: configuration, isSelected: isSelected)
   }
 
   private struct HoverableButton: View {
     let configuration: ButtonStyleConfiguration
+    let isSelected: Bool
     @State private var isHovered = false
 
     var body: some View {
       configuration.label
         .font(.caption.weight(.medium))
-        .foregroundStyle(.primary)
+        .foregroundStyle(isSelected ? Color.white : Color.textPrimary)
         .frame(maxWidth: .infinity)
         .padding(.vertical, 6)
         .background(
           RoundedRectangle(cornerRadius: 6)
-            .fill(Color.secondary.opacity(backgroundOpacity))
+            .fill(isSelected ? Color.accentColor : Color.textSecondary.opacity(backgroundOpacity))
         )
         .scaleEffect(configuration.isPressed ? 0.97 : 1)
         .animation(.easeOut(duration: 0.1), value: configuration.isPressed)

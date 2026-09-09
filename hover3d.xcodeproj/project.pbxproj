@@ -22,10 +22,11 @@
 		1AA8DC332578DE000031FEE6 /* ChamferProfileSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA8DC372578DE000031FEE6 /* ChamferProfileSelector.swift */; };
 		1AA8DC342578DE000031FEE6 /* ChamferProfileType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA8DC382578DE000031FEE6 /* ChamferProfileType.swift */; };
 		7A2E1D010000000000000001 /* ExportFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2E1D010000000000000011 /* ExportFormat.swift */; };
-		7A2E1D010000000000000002 /* MaterialPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2E1D010000000000000012 /* MaterialPanel.swift */; };
+		7A2E1D010000000000000002 /* InspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2E1D010000000000000012 /* InspectorView.swift */; };
 		7A2E1D010000000000000003 /* SliderRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2E1D010000000000000013 /* SliderRow.swift */; };
 		7A2E1D010000000000000004 /* PreciseSliderRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A2E1D010000000000000014 /* PreciseSliderRow.swift */; };
 		E8B269C83051AA36006FBEE8 /* HoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8B269C73051AA36006FBEE8 /* HoverView.swift */; };
+		E8B269CB3051BB02006FBEE8 /* MaterialSlotButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8B269CA3051BB02006FBEE8 /* MaterialSlotButtonStyle.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -47,10 +48,11 @@
 		1AA8DC372578DE000031FEE6 /* ChamferProfileSelector.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChamferProfileSelector.swift; sourceTree = "<group>"; };
 		1AA8DC382578DE000031FEE6 /* ChamferProfileType.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChamferProfileType.swift; sourceTree = "<group>"; };
 		7A2E1D010000000000000011 /* ExportFormat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportFormat.swift; sourceTree = "<group>"; };
-		7A2E1D010000000000000012 /* MaterialPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaterialPanel.swift; sourceTree = "<group>"; };
+		7A2E1D010000000000000012 /* InspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspectorView.swift; sourceTree = "<group>"; };
 		7A2E1D010000000000000013 /* SliderRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SliderRow.swift; sourceTree = "<group>"; };
 		7A2E1D010000000000000014 /* PreciseSliderRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreciseSliderRow.swift; sourceTree = "<group>"; };
 		E8B269C73051AA36006FBEE8 /* HoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HoverView.swift; sourceTree = "<group>"; };
+		E8B269CA3051BB02006FBEE8 /* MaterialSlotButtonStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaterialSlotButtonStyle.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -123,7 +125,7 @@
 				1AA8DC362578DE000031FEE6 /* ChamferModeSelector.swift */,
 				1AA8DC372578DE000031FEE6 /* ChamferProfileSelector.swift */,
 				1AA8DC1F2578D9E20031FEE6 /* Editor.swift */,
-				7A2E1D010000000000000012 /* MaterialPanel.swift */,
+				7A2E1D010000000000000012 /* InspectorView.swift */,
 				7A2E1D010000000000000013 /* SliderRow.swift */,
 				7A2E1D010000000000000014 /* PreciseSliderRow.swift */,
 				E8B269C73051AA36006FBEE8 /* HoverView.swift */,
@@ -143,6 +145,7 @@
 		E8B269C93051B62C006FBEE8 /* Styles */ = {
 			isa = PBXGroup;
 			children = (
+				E8B269CA3051BB02006FBEE8 /* MaterialSlotButtonStyle.swift */,
 				1AA8DC352578DE000031FEE6 /* ChamferButtonStyle.swift */,
 			);
 			path = Styles;
@@ -231,8 +234,9 @@
 				1AA8DC1D2578D9250031FEE6 /* Extensions.swift in Sources */,
 				E8B269C83051AA36006FBEE8 /* HoverView.swift in Sources */,
 				1AA8DC202578D9E20031FEE6 /* Editor.swift in Sources */,
-				7A2E1D010000000000000002 /* MaterialPanel.swift in Sources */,
+				7A2E1D010000000000000002 /* InspectorView.swift in Sources */,
 				7A2E1D010000000000000003 /* SliderRow.swift in Sources */,
+				E8B269CB3051BB02006FBEE8 /* MaterialSlotButtonStyle.swift in Sources */,
 				7A2E1D010000000000000004 /* PreciseSliderRow.swift in Sources */,
 				1AA8DC2B2578DC950031FEE6 /* SVGParser.swift in Sources */,
 			);

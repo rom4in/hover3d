@@ -19,17 +19,17 @@ struct Editor: View {
                 .clipShape(RoundedRectangle(cornerRadius: 6))
               Text(model.fileName)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(.textSecondary)
                 .lineLimit(1)
             } else {
               Image(systemName: "arrow.down.doc")
                 .font(.title2)
-                .foregroundColor(.secondary)
+                .foregroundColor(.textSecondary)
               Text("Drop an SVG here")
                 .font(.subheadline.weight(.medium))
               Text("or choose a file below")
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(.textSecondary)
             }
 
             Button(action: openSVGFile) {
@@ -42,7 +42,7 @@ struct Editor: View {
         }
         .overlay(
           RoundedRectangle(cornerRadius: 8)
-            .stroke(isDropping ? Color.accentColor : Color.secondary.opacity(0.3),
+            .stroke(isDropping ? Color.accentColor : Color.textSecondary.opacity(0.3),
                     style: StrokeStyle(lineWidth: isDropping ? 2 : 1, dash: [6]))
             .allowsHitTesting(false)
         )

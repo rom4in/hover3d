@@ -1,6 +1,6 @@
 import AppKit
 
-enum ChamferProfileType {
+enum ChamferProfileType: Equatable {
   case straight
   case curvedIn
   case curvedOut

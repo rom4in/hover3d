@@ -21,7 +21,7 @@ class DataModel : NSObject, ObservableObject {
   @Published var selectedMaterialIndex = 0
   @Published var selectedGeometryNode: SCNNode?
   @Published var materialImageName: String?
-  @Published var materialPanelExpanded = false
+  @Published var inspectorPresented = false
 
   @Published var svgSize = CGSize()
   @Published var fileName = "SceneShape"
@@ -56,14 +56,14 @@ class DataModel : NSObject, ObservableObject {
     ensureFourMaterials(in: node)
     selectedGeometryNode = node
     selectedMaterialIndex = min(max(index ?? selectedMaterialIndex, 0), Self.materialNames.count - 1)
-    materialPanelExpanded = true
+    inspectorPresented = true
     refreshMaterialControls()
   }
 
   func selectMaterial(_ index: Int) {
     guard Self.materialNames.indices.contains(index) else { return }
     selectedMaterialIndex = index
-    materialPanelExpanded = true
+    inspectorPresented = true
     refreshMaterialControls()
   }
 

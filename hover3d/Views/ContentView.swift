@@ -11,17 +11,23 @@ struct ContentView: View {
         Editor()
           .navigationSplitViewColumnWidth(min: 260, ideal: 300, max: 380)
       } detail: {
-        HStack(spacing: 0) {
-          HoverView(sceneView: $model.sceneView, model: model)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .clipped()
-
-          Divider()
-
-          MaterialPanel()
-            .frame(width: model.materialPanelExpanded ? 300 : 56)
-            .frame(maxHeight: .infinity)
-        }
+        HoverView(sceneView: $model.sceneView, model: model)
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
+          .clipped()
+          .inspector(isPresented: $model.inspectorPresented) {
+            InspectorView()
+              .inspectorColumnWidth(min: 280, ideal: 320, max: 420)
+          }
+          .toolbar {
+            ToolbarItem {
+              Button {
+                model.inspectorPresented.toggle()
+              } label: {
+                Label("Materials", systemImage: "sidebar.right")
+              }
+              .help("Show materials inspector")
+            }
+          }
       }
       .navigationSplitViewStyle(.balanced)
       .onAppear {
@@ -44,6 +50,4 @@ struct ContentView_Previews: PreviewProvider {
         ContentView()
     }
 }
-
-
 

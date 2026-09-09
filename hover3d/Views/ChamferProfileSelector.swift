@@ -13,6 +13,7 @@ struct ChamferProfileSelector: View {
       } label: {
         Text("straight")
       }
+      .buttonStyle(ChamferButtonStyle(isSelected: profile == .straight))
 
       HStack(spacing: 20) {
         Button {
@@ -21,6 +22,7 @@ struct ChamferProfileSelector: View {
         } label: {
           Text("curveOut")
         }
+        .buttonStyle(ChamferButtonStyle(isSelected: profile == .curvedOut))
 
         Button {
           profile = .curvedIn
@@ -28,6 +30,7 @@ struct ChamferProfileSelector: View {
         } label: {
           Text("curveIn")
         }
+        .buttonStyle(ChamferButtonStyle(isSelected: profile == .curvedIn))
       }
 
       HStack(spacing: 20) {
@@ -37,6 +40,7 @@ struct ChamferProfileSelector: View {
         } label: {
           Text("TildaIn")
         }
+        .buttonStyle(ChamferButtonStyle(isSelected: profile == .tildaIn))
 
         Button {
           profile = .tildaOut
@@ -44,9 +48,9 @@ struct ChamferProfileSelector: View {
         } label: {
           Text("TildaOut")
         }
+        .buttonStyle(ChamferButtonStyle(isSelected: profile == .tildaOut))
       }
     }
-    .buttonStyle(ChamferButtonStyle())
   }
 }
 

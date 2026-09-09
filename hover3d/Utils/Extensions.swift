@@ -10,10 +10,11 @@ import SceneKit
 import SwiftUI
 
 extension Color {
-  static var level1 = Color("level1")
-  static var level2 = Color("level2")
-  static var level3 = Color("level3")
-  static var label = Color("reversed")
+  static let textPrimary = Color("textPrimary")
+  static let textSecondary = Color("textSecondary")
+  static let backgroundPrimary = Color("backgroundPrimary")
+  static let backgroundSecondary = Color("backgroundSecondary")
+  static let backgroundTertiary = Color("backgroundTertiary")
 }
 
 

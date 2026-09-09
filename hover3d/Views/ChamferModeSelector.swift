@@ -13,6 +13,7 @@ struct ChamferModeSelector: View {
       } label: {
         Text("both")
       }
+      .buttonStyle(ChamferButtonStyle(isSelected: mode == .both))
 
       HStack(spacing: 20) {
         Button {
@@ -21,6 +22,7 @@ struct ChamferModeSelector: View {
         } label: {
           Text("front")
         }
+        .buttonStyle(ChamferButtonStyle(isSelected: mode == .front))
 
         Button {
           mode = .back
@@ -28,9 +30,9 @@ struct ChamferModeSelector: View {
         } label: {
           Text("back")
         }
+        .buttonStyle(ChamferButtonStyle(isSelected: mode == .back))
       }
     }
-    .buttonStyle(ChamferButtonStyle())
   }
 }
 
