@@ -9,16 +9,18 @@ struct InspectorView: View {
   @State private var selectedExportFormat: ExportFormat = .scn
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 12) {
-      Text("Material")
-        .font(.title3.weight(.semibold))
-        .frame(maxWidth: .infinity, alignment: .leading)
-
-      geometriesList
-      materialsList
-      materialControls
-      Spacer(minLength: 12)
-      exportControls
+      VStack(alignment: .leading, spacing: 12) {
+          Text("Inspector")
+              .font(.title3.weight(.semibold))
+              .frame(maxWidth: .infinity, alignment: .leading)
+          ScrollView(.vertical, showsIndicators: false) {
+              
+          geometriesList
+          materialsList
+          materialControls
+      }
+        Divider()
+        exportControls
     }
     .padding(16)
     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
