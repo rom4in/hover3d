@@ -1,15 +1,26 @@
-//
-//  SegmentedControl.swift
-//  quickshape
-//
-//  Created by BigMac on 05/08/2020.
-//  Copyright © 2020 ubicolor. All rights reserved.
-//
-
 import SwiftUI
 import SceneKit
 
-
+private struct ChamferButtonStyle: ButtonStyle {
+  func makeBody(configuration: Configuration) -> some View {
+    configuration.label
+      .font(.caption.weight(.medium))
+      .foregroundStyle(.primary)
+      .frame(minWidth: 72)
+      .padding(.horizontal, 10)
+      .padding(.vertical, 6)
+      .background(
+        RoundedRectangle(cornerRadius: 6)
+          .fill(Color.secondary.opacity(configuration.isPressed ? 0.2 : 0.12))
+      )
+      .overlay(
+        RoundedRectangle(cornerRadius: 6)
+          .stroke(Color.secondary.opacity(0.25), lineWidth: 1)
+      )
+      .scaleEffect(configuration.isPressed ? 0.97 : 1)
+      .animation(.easeOut(duration: 0.1), value: configuration.isPressed)
+  }
+}
 
 struct ChamferModeSelector: View {
 
@@ -20,40 +31,30 @@ struct ChamferModeSelector: View {
 
     VStack(spacing: 20) {
 
-      Button(action: {
+      Button {
         self.mode = .both
         self.node.updateChamfer(mode: self.mode)
-      }) {
-        ZStack {
-          Color.clear
-          Text("both")
-        }
+      } label: {
+        Text("both")
       }
 
       HStack(spacing: 20) {
-        Button(action: {
+        Button {
           self.mode = .front
           self.node.updateChamfer(mode: self.mode)
-
-        }) {
-          ZStack {
-          Color.clear
+        } label: {
           Text("front")
-          }
         }
 
-        Button(action: {
+        Button {
           self.mode = .back
           self.node.updateChamfer(mode: self.mode)
-
-        }) {
-          ZStack {
-          Color.clear
+        } label: {
           Text("back")
-          }
         }
       }
     }
+    .buttonStyle(ChamferButtonStyle())
   }
 }
 
@@ -79,72 +80,57 @@ enum ChamferProfileType  {
 struct ChamferProfileSelector: View {
 
   var node : SCNNode
-  //@Binding var profile : NSBezierPath
   @Binding var profile : ChamferProfileType
 
   var body: some View {
 
       VStack(spacing: 20) {
 
-        Button(action: {
-          self.profile = .straight
-          self.node.updateChamfer(profile: self.profile)
-        }) {
-          ZStack {
-          Color.clear
+        Button {
+          profile = .straight
+          node.updateChamfer(profile: self.profile)
+        } label: {
           Text("straight")
-          }
         }
 
         HStack(spacing: 20) {
 
-          Button(action: {
-            self.profile = .curvedOut
-            self.node.updateChamfer(profile: self.profile)
-          }) {
-            ZStack {
-            Color.clear
+          Button {
+            profile = .curvedOut
+            node.updateChamfer(profile: self.profile)
+          } label: {
             Text("curveOut")
-            }
           }
 
-          Button(action: {
+          Button {
             self.profile = .curvedIn
             self.node.updateChamfer(profile: self.profile)
-          }) {
-            ZStack {
-            Color.clear
+          } label: {
             Text("curveIn")
-            }
           }
         }
 
 
         HStack(spacing: 20) {
-          Button(action: {
+          Button {
             self.profile = .tildaIn
             self.node.updateChamfer(profile: self.profile)
-          }) {
-            ZStack {
-            Color.clear
+          } label: {
             Text("TildaIn")
-            }
           }
 
-          Button(action: {
+          Button {
             self.profile = .tildaOut
             self.node.updateChamfer(profile: self.profile)
-          }) {
-            ZStack {
-            Color.clear
+          } label: {
             Text("TildaOut")
-            }
           }
         }
 
         Color.clear
 
     }
+    .buttonStyle(ChamferButtonStyle())
 
   }
 }

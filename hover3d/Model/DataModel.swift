@@ -1,11 +1,3 @@
-//
-//  DataModel.swift
-//  hover3d
-//
-//  Created by BigMac on 03/12/2020.
-//
-
-
 import SwiftUI
 import SceneKit
 
