@@ -1,15 +1,12 @@
 import SwiftUI
-import SceneKit
 
 struct ChamferProfileSelector: View {
-  var node: SCNNode
   @Binding var profile: ChamferProfileType
 
   var body: some View {
     VStack(spacing: 20) {
       Button {
         profile = .straight
-        node.updateChamfer(profile: profile)
       } label: {
         Text("straight")
       }
@@ -18,7 +15,6 @@ struct ChamferProfileSelector: View {
       HStack(spacing: 20) {
         Button {
           profile = .curvedOut
-          node.updateChamfer(profile: profile)
         } label: {
           Text("curveOut")
         }
@@ -26,7 +22,6 @@ struct ChamferProfileSelector: View {
 
         Button {
           profile = .curvedIn
-          node.updateChamfer(profile: profile)
         } label: {
           Text("curveIn")
         }
@@ -36,7 +31,6 @@ struct ChamferProfileSelector: View {
       HStack(spacing: 20) {
         Button {
           profile = .tildaIn
-          node.updateChamfer(profile: profile)
         } label: {
           Text("TildaIn")
         }
@@ -44,7 +38,6 @@ struct ChamferProfileSelector: View {
 
         Button {
           profile = .tildaOut
-          node.updateChamfer(profile: profile)
         } label: {
           Text("TildaOut")
         }
@@ -56,7 +49,7 @@ struct ChamferProfileSelector: View {
 
 struct ChamferProfileSelector_Previews: PreviewProvider {
   static var previews: some View {
-    ChamferProfileSelector(node: SCNNode(), profile: .constant(.straight))
+    ChamferProfileSelector(profile: .constant(.straight))
       .padding()
   }
 }

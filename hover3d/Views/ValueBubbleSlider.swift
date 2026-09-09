@@ -8,8 +8,8 @@ struct ValueBubbleSlider: View {
     
     @Environment(\.isEnabled) private var isEnabled
     
-    private let trackHeight: CGFloat = 40
-    private let valueBadgeDiameter: CGFloat = 30
+    private let trackHeight: CGFloat = 20
+    private let valueBadgeDiameter: CGFloat = 20
     
     private let fillColor = Color.accentColor
     private let trackColor = Color.textPrimary.opacity(0.14)
@@ -66,9 +66,9 @@ struct ValueBubbleSlider: View {
         Text(formattedValue)
             .font(.system(size: 10, weight: .medium, design: .rounded))
             .monospacedDigit()
-            .foregroundStyle(Color.primary)
-            .frame(width: valueBadgeDiameter, height: valueBadgeDiameter)
-            .background(Circle().fill(valueBadgeColor.opacity(isEnabled ? 1 : 0.45)))
+            .foregroundStyle(Color.black)
+//            .frame(width: valueBadgeDiameter, height: 14)
+//            .background(Capsule().fill(valueBadgeColor.opacity(isEnabled ? 1 : 0.45)))
     }
     
     private var formattedValue: String {
@@ -105,7 +105,17 @@ struct ValueBubbleSlider: View {
 #Preview {
     @Previewable @State var value: CGFloat = 71
     
-    ValueBubbleSlider(value: $value, accessibilityLabel: "Metallic")
-        .frame(width: 360)
-        .padding()
+    VStack {
+        ValueBubbleSlider(value: .constant(71), accessibilityLabel: "Metallic")
+            .frame(width: 360)
+            .padding()
+        ValueBubbleSlider(value: .constant(0), accessibilityLabel: "Metallic")
+            .frame(width: 360)
+            .padding()
+        ValueBubbleSlider(value: .constant(5), accessibilityLabel: "Metallic")
+            .frame(width: 360)
+            .padding()
+    }
+    
+
 }

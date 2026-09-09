@@ -3,6 +3,13 @@ import SceneKit
 
 class DataModel : NSObject, ObservableObject {
 
+  struct GeometrySettings {
+    var extrusion: CGFloat
+    var layerOffset: CGFloat
+    var chamferMode: SCNChamferMode
+    var chamferProfile: ChamferProfileType
+  }
+
   static let materialNames = ["front", "back", "side", "edge"]
 
   struct MaterialColorPreset: Identifiable {
@@ -26,8 +33,11 @@ class DataModel : NSObject, ObservableObject {
   @Published var diffuseColor = Color.white
   @Published var selectedMaterialIndex = 0
   @Published var selectedGeometryNode: SCNNode?
+  @Published private(set) var selectedGeometrySettings: GeometrySettings?
   @Published var materialImageName: String?
   @Published var inspectorPresented = false
+
+  private var geometrySettings: [ObjectIdentifier: GeometrySettings] = [:]
 
   @Published var svgSize = CGSize()
   @Published var fileName = "SceneShape"
@@ -94,9 +104,63 @@ class DataModel : NSObject, ObservableObject {
     guard node.geometry != nil else { return }
     ensureFourMaterials(in: node)
     selectedGeometryNode = node
+    selectedGeometrySettings = settings(for: node)
     selectedMaterialIndex = min(max(index ?? selectedMaterialIndex, 0), Self.materialNames.count - 1)
     inspectorPresented = true
     refreshMaterialControls()
+  }
+
+  func updateSelectedExtrusion(_ value: CGFloat) {
+    updateSelectedGeometry { node, settings in
+      settings.extrusion = min(max(value, 0), 100)
+      (node.geometry as? SCNShape)?.extrusionDepth = settings.extrusion
+    }
+  }
+
+  func updateSelectedLayerOffset(_ value: CGFloat) {
+    updateSelectedGeometry { node, settings in
+      settings.layerOffset = min(max(value, 0), 100)
+      node.position.z = settings.layerOffset
+    }
+  }
+
+  func updateSelectedChamferMode(_ mode: SCNChamferMode) {
+    updateSelectedGeometry { node, settings in
+      settings.chamferMode = mode
+      (node.geometry as? SCNShape)?.chamferMode = mode
+    }
+  }
+
+  func updateSelectedChamferProfile(_ profile: ChamferProfileType) {
+    updateSelectedGeometry { node, settings in
+      settings.chamferProfile = profile
+      (node.geometry as? SCNShape)?.chamferProfile = profile.getBezierPath()
+    }
+  }
+
+  private func settings(for node: SCNNode) -> GeometrySettings {
+    let identifier = ObjectIdentifier(node)
+    if let settings = geometrySettings[identifier] { return settings }
+
+    let shape = node.geometry as? SCNShape
+    let settings = GeometrySettings(
+      extrusion: shape?.extrusionDepth ?? extrusion,
+      layerOffset: node.position.z,
+      chamferMode: shape?.chamferMode ?? chamferMode,
+      chamferProfile: chamferProfile
+    )
+    geometrySettings[identifier] = settings
+    return settings
+  }
+
+  private func updateSelectedGeometry(
+    _ update: (SCNNode, inout GeometrySettings) -> Void
+  ) {
+    guard let node = selectedGeometryNode,
+          var settings = selectedGeometrySettings else { return }
+    update(node, &settings)
+    geometrySettings[ObjectIdentifier(node)] = settings
+    selectedGeometrySettings = settings
   }
 
   func selectMaterial(_ index: Int) {
@@ -153,8 +217,9 @@ class DataModel : NSObject, ObservableObject {
   func importSVG(from url: URL) {
     fileName = url.deletingPathExtension().lastPathComponent
     importedSVGImage = NSImage(contentsOf: url)
-    zOffset = 0
-    mamaNode.updateZ(offset: 0)
+    selectedGeometryNode = nil
+    selectedGeometrySettings = nil
+    geometrySettings.removeAll()
     guard let data = try? Data(contentsOf: url) else { return }
     let parser = XMLParser(data: data)
     parser.delegate = self

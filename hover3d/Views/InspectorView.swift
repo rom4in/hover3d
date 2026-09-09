@@ -9,18 +9,20 @@ struct InspectorView: View {
   @State private var selectedExportFormat: ExportFormat = .scn
 
   var body: some View {
-      VStack(alignment: .leading, spacing: 12) {
-          Text("Inspector")
-              .font(.title3.weight(.semibold))
-              .frame(maxWidth: .infinity, alignment: .leading)
-          ScrollView(.vertical, showsIndicators: false) {
-              
-          geometriesList
+    VStack(alignment: .leading, spacing: 12) {
+      Text("Materials")
+        .font(.title3.weight(.semibold))
+        .frame(maxWidth: .infinity, alignment: .leading)
+
+      ScrollView(.vertical, showsIndicators: false) {
+        VStack(alignment: .leading, spacing: 12) {
           materialsList
           materialControls
+        }
       }
-        Divider()
-        exportControls
+
+      Divider()
+      exportControls
     }
     .padding(16)
     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
@@ -36,42 +38,8 @@ struct InspectorView: View {
     return [shareURL]
   }
 
-  @ViewBuilder
-  private var geometriesList: some View {
-    GroupBox("Geometries") {
-      ScrollView {
-        VStack(alignment: .leading, spacing: 2) {
-          ForEach(Array(model.geometryNodes.enumerated()), id: \.offset) { _, node in
-            Button {
-              model.select(node: node)
-            } label: {
-              HStack(spacing: 8) {
-                Image(systemName: "cube")
-                  .foregroundColor(.textSecondary)
-                Text(node.name ?? "Geometry")
-                  .lineLimit(1)
-                Spacer(minLength: 0)
-              }
-              .padding(.horizontal, 8)
-              .padding(.vertical, 5)
-              .contentShape(Rectangle())
-              .background(
-                RoundedRectangle(cornerRadius: 5)
-                  .fill(model.selectedGeometryNode === node ? Color.accentColor.opacity(0.18) : .clear)
-              )
-            }
-            .buttonStyle(.plain)
-          }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-      }
-      .frame(maxHeight: 180)
-    }
-  }
-
-  @ViewBuilder
   private var materialsList: some View {
-    GroupBox("Materials") {
+    GroupBox("Surface") {
       HStack(spacing: 6) {
         ForEach(Array(DataModel.materialNames.enumerated()), id: \.offset) { index, name in
           Button(name.capitalized) { model.selectMaterial(index) }
@@ -82,10 +50,9 @@ struct InspectorView: View {
     }
   }
 
-  @ViewBuilder
   private var materialControls: some View {
     VStack(alignment: .leading, spacing: 12) {
-      Text(model.selectedGeometryNode?.name ?? "Click a shape to select it")
+      Text(model.selectedGeometryNode?.name ?? "Select a geometry to edit its materials")
         .font(.caption)
         .foregroundColor(.textSecondary)
 
@@ -96,27 +63,7 @@ struct InspectorView: View {
       .disabled(model.selectedGeometryNode == nil)
 
       if !model.materialColorPresets.isEmpty {
-        VStack(alignment: .leading, spacing: 6) {
-          Text("Presets")
-            .font(.caption)
-            .foregroundColor(.textSecondary)
-
-          HStack(spacing: 8) {
-            ForEach(model.materialColorPresets) { preset in
-              Button {
-                model.setDiffuseColor(preset.color)
-              } label: {
-                Circle()
-                  .fill(preset.color)
-                  .frame(width: 22, height: 22)
-                  .overlay(Circle().strokeBorder(Color.primary.opacity(0.25), lineWidth: 1))
-              }
-              .buttonStyle(.plain)
-              .help(preset.name.capitalized)
-              .accessibilityLabel("Use \(preset.name) color")
-            }
-          }
-        }
+        materialPresets
       }
 
       HStack {
@@ -134,6 +81,7 @@ struct InspectorView: View {
         set: { model.updateSelectedMetalness($0) }
       ))
       .disabled(model.selectedGeometryNode == nil)
+
       PreciseSliderRow(title: "Roughness", value: Binding(
         get: { model.roughness },
         set: { model.updateSelectedRoughness($0) }
@@ -142,15 +90,40 @@ struct InspectorView: View {
     }
   }
 
-  @ViewBuilder
+  private var materialPresets: some View {
+    VStack(alignment: .leading, spacing: 6) {
+      Text("Presets")
+        .font(.caption)
+        .foregroundColor(.textSecondary)
+
+      HStack(spacing: 8) {
+        ForEach(model.materialColorPresets) { preset in
+          Button {
+            model.setDiffuseColor(preset.color)
+          } label: {
+            Circle()
+              .fill(preset.color)
+              .frame(width: 22, height: 22)
+              .overlay(Circle().strokeBorder(Color.primary.opacity(0.25), lineWidth: 1))
+          }
+          .buttonStyle(.plain)
+          .help(preset.name.capitalized)
+          .accessibilityLabel("Use \(preset.name) color")
+        }
+      }
+    }
+  }
+
   private var exportControls: some View {
     GroupBox(label: Text("Export")) {
       VStack(alignment: .leading, spacing: 12) {
         HStack(spacing: 6) {
           TextField("Scene name", text: $model.fileName)
             .textFieldStyle(.roundedBorder)
-          Text(".\(selectedExportFormat.fileExtension)").foregroundColor(.textSecondary)
+          Text(".\(selectedExportFormat.fileExtension)")
+            .foregroundColor(.textSecondary)
         }
+
         HStack {
           Text("Format")
           Spacer()
@@ -163,10 +136,12 @@ struct InspectorView: View {
           .labelsHidden()
           .pickerStyle(.menu)
         }
+
         Text(selectedExportFormat.summary)
           .font(.caption)
           .foregroundColor(.textSecondary)
           .fixedSize(horizontal: false, vertical: true)
+
         HStack {
           Button(action: exportSelectedFormat) {
             Label("Save \(selectedExportFormat.displayName)", systemImage: "square.and.arrow.down")
@@ -179,7 +154,6 @@ struct InspectorView: View {
         .buttonStyle(.bordered)
       }
     }
-    .padding(.top, 4)
   }
 
   private func openDiffuseImage() {
@@ -254,14 +228,11 @@ struct InspectorView: View {
   }
 }
 
-
-
 #Preview {
-    
-    Color.white
-        .inspector(isPresented: .constant(true)) {
-        InspectorView()
-          .inspectorColumnWidth(min: 280, ideal: 320, max: 420)
-          .environmentObject(DataModel())
-      }
+  Color.white
+    .inspector(isPresented: .constant(true)) {
+      InspectorView()
+        .inspectorColumnWidth(min: 280, ideal: 320, max: 420)
+        .environmentObject(DataModel())
+    }
 }

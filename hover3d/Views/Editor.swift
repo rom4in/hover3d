@@ -1,4 +1,5 @@
 import SwiftUI
+import SceneKit
 import UniformTypeIdentifiers
 
 struct Editor: View {
@@ -6,61 +7,103 @@ struct Editor: View {
     @State private var isDropping = false
     
     var body: some View {
-        ScrollView(showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 18) {
-                svgDropArea
-                
-                Text("Shape controls")
-                    .font(.title3.weight(.semibold))
-                
-                GroupBox(label: Text("Geometry")) {
-                    VStack(alignment: .leading, spacing: 12) {
-                        SliderRow(title: "Extrusion", value: Binding(
-                            get: { model.extrusion / 100 },
-                            set: { value in
-                                model.extrusion = value * 100
-                                model.mamaNode.updateExtrusion(extrusion: model.extrusion)
-                            }
-                        ))
-                        SliderRow(title: "Layer offset", value: Binding(
-                            get: { model.zOffset / 100 },
-                            set: { value in
-                                model.zOffset = value * 100
-                                model.mamaNode.updateZ(offset: model.zOffset)
-                            }
-                        ))
-                    }.padding(.top, 4)
-                }
-                
-                GroupBox(label: Text("Chamfer")) {
-                    VStack(alignment: .leading, spacing: 14) {
-                        SliderRow(title: "Radius", value: Binding(
-                            get: { model.chamferRadius / 16 },
-                            set: { value in
-                                model.chamferRadius = value * 16
-                                model.mamaNode.updateChamfer(radius: model.chamferRadius)
-                            }
-                        ))
-                        Text("Mode").font(.subheadline.weight(.medium))
-                        ChamferModeSelector(node: model.mamaNode, mode: $model.chamferMode)
-                        Text("Profile").font(.subheadline.weight(.medium))
-                        ChamferProfileSelector(node: model.mamaNode, profile: $model.chamferProfile)
-                        
-                    }.padding(.top, 4)
-                }
-            }.padding(16)
+        VStack(alignment: .leading, spacing: 18) {
+            svgDropArea
+            
+            ScrollView(showsIndicators: false) {
+                geometriesList
+                selectedGeometryControls
+            }
+            .padding(16)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.backgroundSecondary)
     }
     
+    private var geometriesList: some View {
+        GroupBox("Geometries") {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 2) {
+                    ForEach(Array(model.geometryNodes.enumerated()), id: \.offset) { _, node in
+                        geometryButton(for: node)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .frame(maxHeight: 180)
+        }
+    }
+    
+    private func geometryButton(for node: SCNNode) -> some View {
+        Button {
+            model.select(node: node)
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "cube")
+                    .foregroundColor(.textSecondary)
+                Text(node.name ?? "Geometry")
+                    .lineLimit(1)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 5)
+            .contentShape(Rectangle())
+            .background(
+                RoundedRectangle(cornerRadius: 5)
+                    .fill(model.selectedGeometryNode === node ? Color.accentColor.opacity(0.18) : .clear)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+    
+    @ViewBuilder
+    private var selectedGeometryControls: some View {
+        if model.selectedGeometrySettings != nil {
+            GroupBox(model.selectedGeometryNode?.name ?? "Geometry") {
+                VStack(alignment: .leading, spacing: 14) {
+                    SliderRow(title: "Extrusion", value: extrusionBinding)
+                    SliderRow(title: "Layer offset", value: layerOffsetBinding)
+                    Text("Mode").font(.subheadline.weight(.medium))
+                    ChamferModeSelector(mode: chamferModeBinding)
+                    Text("Profile").font(.subheadline.weight(.medium))
+                    ChamferProfileSelector(profile: chamferProfileBinding)
+                }
+                .padding(.top, 4)
+            }
+        }
+    }
+    
+    private var extrusionBinding: Binding<CGFloat> {
+        Binding(
+            get: { (model.selectedGeometrySettings?.extrusion ?? 0) / 100 },
+            set: { model.updateSelectedExtrusion($0 * 100) }
+        )
+    }
+    
+    private var layerOffsetBinding: Binding<CGFloat> {
+        Binding(
+            get: { (model.selectedGeometrySettings?.layerOffset ?? 0) / 100 },
+            set: { model.updateSelectedLayerOffset($0 * 100) }
+        )
+    }
+    
+    private var chamferModeBinding: Binding<SCNChamferMode> {
+        Binding(
+            get: { model.selectedGeometrySettings?.chamferMode ?? .front },
+            set: { model.updateSelectedChamferMode($0) }
+        )
+    }
+    
+    private var chamferProfileBinding: Binding<ChamferProfileType> {
+        Binding(
+            get: { model.selectedGeometrySettings?.chamferProfile ?? .curvedOut },
+            set: { model.updateSelectedChamferProfile($0) }
+        )
+    }
     
     private var svgDropArea: some View {
-        Button {
-            openSVGFile()
-        } label: {
+        Button(action: openSVGFile) {
             VStack(spacing: 10) {
-                
                 if let image = model.importedSVGImage {
                     Image(nsImage: image)
                         .resizable()
@@ -85,21 +128,24 @@ struct Editor: View {
                     }
                     .frame(maxWidth: .infinity)
                     .frame(height: 100)
+                    .contentShape(.rect)
                     .overlay(
                         RoundedRectangle(cornerRadius: 8)
-                            .stroke(isDropping ? Color.accentColor : Color.textSecondary.opacity(0.3),
-                                    style: StrokeStyle(lineWidth: isDropping ? 2 : 1, dash: [6]))
+                            .stroke(
+                                isDropping ? Color.accentColor : Color.textSecondary.opacity(0.3),
+                                style: StrokeStyle(lineWidth: isDropping ? 2 : 1, dash: [6])
+                            )
                             .allowsHitTesting(false)
                     )
                 }
             }
         }
-            .padding(.vertical, 4)
-            
+        .padding(.vertical, 4)
         .onDrop(of: ["public.file-url"], isTargeted: $isDropping, perform: handleDrop)
         .buttonStyle(.plain)
     }
-    func openSVGFile() {
+    
+    private func openSVGFile() {
         let panel = NSOpenPanel()
         panel.canChooseDirectories = false
         panel.canChooseFiles = true
@@ -114,19 +160,16 @@ struct Editor: View {
         provider.loadDataRepresentation(forTypeIdentifier: "public.file-url") { data, _ in
             guard let data,
                   let path = String(data: data, encoding: .utf8) else { return }
-            let url = path.hasPrefix("file://")
-            ? URL(string: path)
-            : URL(fileURLWithPath: path)
+            let url = path.hasPrefix("file://") ? URL(string: path) : URL(fileURLWithPath: path)
             guard let url else { return }
-            DispatchQueue.main.async {
-                model.importSVG(from: url)
-            }
+            DispatchQueue.main.async { model.importSVG(from: url) }
         }
         return true
     }
     
 }
 
-struct Editor_Previews: PreviewProvider {
-    static var previews: some View { Editor().environmentObject(DataModel()) }
+#Preview {
+    Editor()
+        .environmentObject(DataModel())
 }

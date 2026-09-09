@@ -2,14 +2,12 @@ import SwiftUI
 import SceneKit
 
 struct ChamferModeSelector: View {
-  var node: SCNNode
   @Binding var mode: SCNChamferMode
 
   var body: some View {
     VStack(spacing: 20) {
       Button {
         mode = .both
-        node.updateChamfer(mode: mode)
       } label: {
         Text("both")
       }
@@ -18,7 +16,6 @@ struct ChamferModeSelector: View {
       HStack(spacing: 20) {
         Button {
           mode = .front
-          node.updateChamfer(mode: mode)
         } label: {
           Text("front")
         }
@@ -26,7 +23,6 @@ struct ChamferModeSelector: View {
 
         Button {
           mode = .back
-          node.updateChamfer(mode: mode)
         } label: {
           Text("back")
         }
@@ -38,7 +34,7 @@ struct ChamferModeSelector: View {
 
 struct ChamferModeSelector_Previews: PreviewProvider {
   static var previews: some View {
-    ChamferModeSelector(node: SCNNode(), mode: .constant(.both))
+    ChamferModeSelector(mode: .constant(.both))
       .padding()
   }
 }
