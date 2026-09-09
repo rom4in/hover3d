@@ -11,11 +11,13 @@ import SceneKit
 
 class DataModel : NSObject, ObservableObject {
 
+  static let materialNames = ["front", "back", "side", "edge"]
+
   @Published var sceneView = SCNView()
   @Published var mamaNode = SCNNode()
   @Published var chamferRadius : CGFloat = 5
   @Published var extrusion : CGFloat = 20
-  @Published var zOffset : CGFloat = 10
+  @Published var zOffset : CGFloat = 0
   @Published var currentMaterial = SCNMaterial(hex: "FFFFFF")
   @Published var currentNode = SCNNode()
   @Published var chamferMode = SCNChamferMode.front
@@ -23,8 +25,110 @@ class DataModel : NSObject, ObservableObject {
 
   @Published var roughness : CGFloat = 0.5
   @Published var metalness : CGFloat = 0.5
+  @Published var diffuseColor = Color.white
+  @Published var selectedMaterialIndex = 0
+  @Published var selectedGeometryNode: SCNNode?
+  @Published var materialImageName: String?
+  @Published var materialPanelExpanded = false
 
   @Published var svgSize = CGSize()
+  @Published var fileName = "SceneShape"
+  @Published var importedSVGImage: NSImage?
+
+  var selectedMaterial: SCNMaterial? {
+    guard let geometry = selectedGeometryNode?.geometry,
+          geometry.materials.indices.contains(selectedMaterialIndex) else { return nil }
+    return geometry.materials[selectedMaterialIndex]
+  }
+
+  func materials(from source: SCNMaterial) -> [SCNMaterial] {
+    Self.materialNames.map { name in
+      let material = (source.copy() as? SCNMaterial) ?? SCNMaterial()
+      material.name = name
+      material.lightingModel = .physicallyBased
+      return material
+    }
+  }
+
+  func ensureFourMaterials(in node: SCNNode) {
+    if let geometry = node.geometry,
+       geometry.materials.count != Self.materialNames.count ||
+       zip(geometry.materials, Self.materialNames).contains(where: { $0.name != $1 }) {
+      geometry.materials = materials(from: geometry.materials.first ?? currentMaterial)
+    }
+    node.childNodes.forEach(ensureFourMaterials)
+  }
+
+  func select(node: SCNNode, material index: Int? = nil) {
+    guard node.geometry != nil else { return }
+    ensureFourMaterials(in: node)
+    selectedGeometryNode = node
+    selectedMaterialIndex = min(max(index ?? selectedMaterialIndex, 0), Self.materialNames.count - 1)
+    materialPanelExpanded = true
+    refreshMaterialControls()
+  }
+
+  func selectMaterial(_ index: Int) {
+    guard Self.materialNames.indices.contains(index) else { return }
+    selectedMaterialIndex = index
+    materialPanelExpanded = true
+    refreshMaterialControls()
+  }
+
+  func setDiffuseColor(_ color: Color) {
+    diffuseColor = color
+    selectedMaterial?.diffuse.contents = NSColor(color)
+    materialImageName = nil
+  }
+
+  func setDiffuseImage(_ image: NSImage, named name: String) {
+    selectedMaterial?.diffuse.contents = image
+    materialImageName = name
+  }
+
+  func clearDiffuseImage() {
+    selectedMaterial?.diffuse.contents = NSColor(diffuseColor)
+    materialImageName = nil
+  }
+
+  func updateSelectedMetalness(_ value: CGFloat) {
+    let clamped = min(max(value, 0), 1)
+    metalness = clamped
+    selectedMaterial?.metalness.contents = clamped
+  }
+
+  func updateSelectedRoughness(_ value: CGFloat) {
+    let clamped = min(max(value, 0), 1)
+    roughness = clamped
+    selectedMaterial?.roughness.contents = clamped
+  }
+
+  private func refreshMaterialControls() {
+    guard let material = selectedMaterial else { return }
+    if let color = material.diffuse.contents as? NSColor {
+      diffuseColor = Color(color)
+      materialImageName = nil
+    } else if material.diffuse.contents is NSImage {
+      materialImageName = "Image"
+    }
+    metalness = material.metalness.contents as? CGFloat
+      ?? (material.metalness.contents as? NSNumber).map(CGFloat.init(truncating:))
+      ?? 0
+    roughness = material.roughness.contents as? CGFloat
+      ?? (material.roughness.contents as? NSNumber).map(CGFloat.init(truncating:))
+      ?? 0
+  }
+
+  func importSVG(from url: URL) {
+    fileName = url.deletingPathExtension().lastPathComponent
+    importedSVGImage = NSImage(contentsOf: url)
+    zOffset = 0
+    mamaNode.updateZ(offset: 0)
+    guard let data = try? Data(contentsOf: url) else { return }
+    let parser = XMLParser(data: data)
+    parser.delegate = self
+    parser.parse()
+  }
 
   func createNode() {
     let node = SCNNode()
@@ -78,7 +182,7 @@ class DataModel : NSObject, ObservableObject {
     if let hex = attributes["fill"], hex != "" {
       currentMaterial = SCNMaterial(hex: hex)
     }
-    shape.materials = [currentMaterial]
+    shape.materials = materials(from: currentMaterial)
 
     let node = SCNNode()
     node.name = name.description
@@ -114,7 +218,7 @@ class DataModel : NSObject, ObservableObject {
          if let color = attributes["fill"],  color != "" {
            currentMaterial = SCNMaterial(hex: color)
          }
-         shape.materials = [currentMaterial]
+         shape.materials = materials(from: currentMaterial)
          let node = SCNNode()
          node.name = name?.description
          node.geometry = shape
@@ -147,7 +251,7 @@ class DataModel : NSObject, ObservableObject {
     shape.chamferMode = chamferMode
     shape.chamferProfile = chamferProfile.getBezierPath()
     if let fill = attributes["fill"], fill != "none" { currentMaterial = SCNMaterial(hex: fill) }
-    shape.materials = [currentMaterial]
+    shape.materials = materials(from: currentMaterial)
 
     let node = SCNNode(geometry: shape)
     node.name = attributes["id"]
@@ -254,7 +358,7 @@ class DataModel : NSObject, ObservableObject {
       currentMaterial = SCNMaterial(hex: hex.description)
     }
 
-    shape.materials = [currentMaterial]
+    shape.materials = materials(from: currentMaterial)
     let node = SCNNode()
     node.name = name.description
     node.geometry = shape
@@ -295,7 +399,7 @@ class DataModel : NSObject, ObservableObject {
     if let hex = attributes["fill"], hex != "" {
       currentMaterial = SCNMaterial(hex: hex)
     }
-    shape.materials = [currentMaterial]
+    shape.materials = materials(from: currentMaterial)
 
     let node = SCNNode()
     node.name = name.description
@@ -334,7 +438,7 @@ class DataModel : NSObject, ObservableObject {
     if let hex = attributes["fill"], hex != "" {
       currentMaterial = SCNMaterial(hex: hex)
     }
-    shape.materials = [currentMaterial]
+    shape.materials = materials(from: currentMaterial)
 
     let node = SCNNode()
     node.name = name.description
@@ -355,4 +459,3 @@ class DataModel : NSObject, ObservableObject {
   }
 
 }
-
