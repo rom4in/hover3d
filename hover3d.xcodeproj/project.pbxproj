@@ -15,9 +15,13 @@
 		1AA8DC1D2578D9250031FEE6 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA8DC1C2578D9250031FEE6 /* Extensions.swift */; };
 		1AA8DC202578D9E20031FEE6 /* Editor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA8DC1F2578D9E20031FEE6 /* Editor.swift */; };
 		1AA8DC232578DA960031FEE6 /* ShareMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA8DC222578DA960031FEE6 /* ShareMenu.swift */; };
-		1AA8DC262578DAEC0031FEE6 /* ChamferModeSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA8DC252578DAEC0031FEE6 /* ChamferModeSelector.swift */; };
 		1AA8DC2B2578DC950031FEE6 /* SVGParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA8DC2A2578DC950031FEE6 /* SVGParser.swift */; };
 		1AA8DC302578DDC20031FEE6 /* art.scnassets in Resources */ = {isa = PBXBuildFile; fileRef = 1AA8DC2F2578DDC20031FEE6 /* art.scnassets */; };
+		1AA8DC312578DE000031FEE6 /* ChamferButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA8DC352578DE000031FEE6 /* ChamferButtonStyle.swift */; };
+		1AA8DC322578DE000031FEE6 /* ChamferModeSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA8DC362578DE000031FEE6 /* ChamferModeSelector.swift */; };
+		1AA8DC332578DE000031FEE6 /* ChamferProfileSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA8DC372578DE000031FEE6 /* ChamferProfileSelector.swift */; };
+		1AA8DC342578DE000031FEE6 /* ChamferProfileType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AA8DC382578DE000031FEE6 /* ChamferProfileType.swift */; };
+		E8B269C83051AA36006FBEE8 /* HoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8B269C73051AA36006FBEE8 /* HoverView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,9 +36,13 @@
 		1AA8DC1C2578D9250031FEE6 /* Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		1AA8DC1F2578D9E20031FEE6 /* Editor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Editor.swift; sourceTree = "<group>"; };
 		1AA8DC222578DA960031FEE6 /* ShareMenu.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ShareMenu.swift; sourceTree = "<group>"; };
-		1AA8DC252578DAEC0031FEE6 /* ChamferModeSelector.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChamferModeSelector.swift; sourceTree = "<group>"; };
 		1AA8DC2A2578DC950031FEE6 /* SVGParser.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SVGParser.swift; sourceTree = "<group>"; };
 		1AA8DC2F2578DDC20031FEE6 /* art.scnassets */ = {isa = PBXFileReference; lastKnownFileType = wrapper.scnassets; path = art.scnassets; sourceTree = "<group>"; };
+		1AA8DC352578DE000031FEE6 /* ChamferButtonStyle.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChamferButtonStyle.swift; sourceTree = "<group>"; };
+		1AA8DC362578DE000031FEE6 /* ChamferModeSelector.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChamferModeSelector.swift; sourceTree = "<group>"; };
+		1AA8DC372578DE000031FEE6 /* ChamferProfileSelector.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChamferProfileSelector.swift; sourceTree = "<group>"; };
+		1AA8DC382578DE000031FEE6 /* ChamferProfileType.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ChamferProfileType.swift; sourceTree = "<group>"; };
+		E8B269C73051AA36006FBEE8 /* HoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HoverView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -91,6 +99,7 @@
 		1AA8DC282578DC780031FEE6 /* Model */ = {
 			isa = PBXGroup;
 			children = (
+				1AA8DC382578DE000031FEE6 /* ChamferProfileType.swift */,
 				1AA8DC192578D90C0031FEE6 /* DataModel.swift */,
 				1AA8DC2A2578DC950031FEE6 /* SVGParser.swift */,
 			);
@@ -101,8 +110,11 @@
 			isa = PBXGroup;
 			children = (
 				1AA8DC0A2578D8500031FEE6 /* ContentView.swift */,
-				1AA8DC252578DAEC0031FEE6 /* ChamferModeSelector.swift */,
+				1AA8DC352578DE000031FEE6 /* ChamferButtonStyle.swift */,
+				1AA8DC362578DE000031FEE6 /* ChamferModeSelector.swift */,
+				1AA8DC372578DE000031FEE6 /* ChamferProfileSelector.swift */,
 				1AA8DC1F2578D9E20031FEE6 /* Editor.swift */,
+				E8B269C73051AA36006FBEE8 /* HoverView.swift */,
 				1AA8DC222578DA960031FEE6 /* ShareMenu.swift */,
 			);
 			path = Views;
@@ -187,12 +199,16 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1AA8DC262578DAEC0031FEE6 /* ChamferModeSelector.swift in Sources */,
+				1AA8DC312578DE000031FEE6 /* ChamferButtonStyle.swift in Sources */,
+				1AA8DC322578DE000031FEE6 /* ChamferModeSelector.swift in Sources */,
+				1AA8DC332578DE000031FEE6 /* ChamferProfileSelector.swift in Sources */,
+				1AA8DC342578DE000031FEE6 /* ChamferProfileType.swift in Sources */,
 				1AA8DC232578DA960031FEE6 /* ShareMenu.swift in Sources */,
 				1AA8DC0B2578D8500031FEE6 /* ContentView.swift in Sources */,
 				1AA8DC092578D8500031FEE6 /* hover3dApp.swift in Sources */,
 				1AA8DC1A2578D90C0031FEE6 /* DataModel.swift in Sources */,
 				1AA8DC1D2578D9250031FEE6 /* Extensions.swift in Sources */,
+				E8B269C83051AA36006FBEE8 /* HoverView.swift in Sources */,
 				1AA8DC202578D9E20031FEE6 /* Editor.swift in Sources */,
 				1AA8DC2B2578DC950031FEE6 /* SVGParser.swift in Sources */,
 			);

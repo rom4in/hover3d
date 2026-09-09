@@ -7,6 +7,51 @@ import SwiftUI
 import SceneKit
 import UniformTypeIdentifiers
 
+private enum ExportFormat: String, CaseIterable, Identifiable {
+  case scn
+  case usdz
+  case usd
+  case dae
+  case obj
+  case stl
+  case ply
+  case abc
+
+  var id: String { rawValue }
+
+  var displayName: String {
+    switch self {
+    case .scn: return "SceneKit"
+    case .usdz: return "USDZ"
+    case .usd: return "USD"
+    case .dae: return "Collada"
+    case .obj: return "OBJ"
+    case .stl: return "STL"
+    case .ply: return "PLY"
+    case .abc: return "Alembic"
+    }
+  }
+
+  var fileExtension: String { rawValue }
+
+  var contentType: UTType {
+    UTType(filenameExtension: fileExtension) ?? .data
+  }
+
+  var summary: String {
+    switch self {
+    case .scn: return "Editable SceneKit scene"
+    case .usdz: return "AR Quick Look and spatial apps"
+    case .usd: return "Universal Scene Description"
+    case .dae: return "Broad 3D app compatibility"
+    case .obj: return "Widely supported mesh format"
+    case .stl: return "3D printing; geometry only"
+    case .ply: return "Mesh data; useful for fabrication tools"
+    case .abc: return "VFX and DCC pipelines"
+    }
+  }
+}
+
 struct Editor: View {
   @EnvironmentObject var model: DataModel
   @State private var isDropping = false
@@ -128,6 +173,7 @@ struct MaterialPanel: View {
   @EnvironmentObject var model: DataModel
   @State private var isSharing = false
   @State private var shareURL: URL?
+  @State private var selectedExportFormat: ExportFormat = .scn
 
   var body: some View {
     VStack(alignment: .leading, spacing: 12) {
@@ -220,20 +266,37 @@ struct MaterialPanel: View {
         HStack(spacing: 6) {
           TextField("Scene name", text: $model.fileName)
             .textFieldStyle(.roundedBorder)
-          Text(".scn").foregroundColor(.secondary)
+          Text(".\(selectedExportFormat.fileExtension)").foregroundColor(.secondary)
         }
         HStack {
-          Button(action: exportScn) {
-            Label("Save scene", systemImage: "square.and.arrow.up")
+          Text("Format")
+          Spacer()
+          Picker("Format", selection: $selectedExportFormat) {
+            ForEach(ExportFormat.allCases) { format in
+              Text("\(format.displayName) (.\(format.fileExtension))")
+                .tag(format)
+            }
+          }
+          .labelsHidden()
+          .pickerStyle(.menu)
+        }
+        Text(selectedExportFormat.summary)
+          .font(.caption)
+          .foregroundColor(.secondary)
+          .fixedSize(horizontal: false, vertical: true)
+        HStack {
+          Button(action: exportSelectedFormat) {
+            Label("Save \(selectedExportFormat.displayName)", systemImage: "square.and.arrow.down")
           }
           Button(action: shareScene) {
             Label("Share", systemImage: "square.and.arrow.up.on.square")
           }
         }
+        .controlSize(.small)
         .buttonStyle(.bordered)
       }
-      .padding(.top, 4)
     }
+    .padding(.top, 4)
   }
 
   private func openDiffuseImage() {
@@ -249,20 +312,32 @@ struct MaterialPanel: View {
     model.setDiffuseImage(image, named: url.lastPathComponent)
   }
 
-  private func exportScn() {
+  private func exportSelectedFormat() {
+    let format = selectedExportFormat
     let panel = NSSavePanel()
-    panel.nameFieldStringValue = "\(model.fileName).scn"
+    panel.nameFieldStringValue = "\(exportBaseName(for: format)).\(format.fileExtension)"
+    panel.allowedContentTypes = [format.contentType]
     panel.canCreateDirectories = true
     panel.begin { response in
-      guard response == .OK, let url = panel.url, let scene = exportableScene() else { return }
-      _ = scene.write(to: url, options: nil, delegate: nil, progressHandler: nil)
+      guard response == .OK, let url = panel.url else { return }
+      _ = writeExport(format, to: url)
     }
   }
 
   private func shareScene() {
-    guard let url = exportURL() else { return }
+    guard let url = exportURL(for: selectedExportFormat) else { return }
     shareURL = url
     isSharing = true
+  }
+
+  private func exportBaseName(for format: ExportFormat) -> String {
+    let trimmed = model.fileName.trimmingCharacters(in: .whitespacesAndNewlines)
+    let fallback = trimmed.isEmpty ? "SceneShape" : trimmed
+    let knownExtension = ".\(format.fileExtension)"
+    if fallback.lowercased().hasSuffix(knownExtension) {
+      return String(fallback.dropLast(knownExtension.count))
+    }
+    return fallback
   }
 
   private func exportableScene() -> SCNScene? {
@@ -272,12 +347,17 @@ struct MaterialPanel: View {
     return copy
   }
 
-  private func exportURL() -> URL? {
+  private func exportURL(for format: ExportFormat) -> URL? {
     guard let scene = exportableScene() else { return nil }
     let url = FileManager.default.temporaryDirectory
-      .appendingPathComponent("\(model.fileName).scn")
+      .appendingPathComponent("\(exportBaseName(for: format)).\(format.fileExtension)")
     guard scene.write(to: url, options: nil, delegate: nil, progressHandler: nil) else { return nil }
     return url
+  }
+
+  private func writeExport(_ format: ExportFormat, to url: URL) -> Bool {
+    guard let scene = exportableScene() else { return false }
+    return scene.write(to: url, options: nil, delegate: nil, progressHandler: nil)
   }
 
   private func removeCamerasAndLights(from node: SCNNode) {
