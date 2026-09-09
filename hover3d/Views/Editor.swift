@@ -5,13 +5,14 @@
 
 import SwiftUI
 import SceneKit
+import UniformTypeIdentifiers
 
 struct Editor: View {
   @EnvironmentObject var model: DataModel
   @State private var isDropping = false
 
   var body: some View {
-    ScrollView {
+    ScrollView(showsIndicators: false) {
       VStack(alignment: .leading, spacing: 18) {
         GroupBox(label: Text("SVG")) {
           VStack(spacing: 10) {
@@ -90,7 +91,6 @@ struct Editor: View {
             ))
           }.padding(.top, 4)
         }
-
       }.padding(16)
     }
     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -100,7 +100,7 @@ struct Editor: View {
     let panel = NSOpenPanel()
     panel.canChooseDirectories = false
     panel.canChooseFiles = true
-    panel.allowedFileTypes = ["public.svg-image"]
+    panel.allowedContentTypes = [UTType.svg]
     panel.allowsMultipleSelection = false
     guard panel.runModal() == .OK, let url = panel.url else { return }
     model.importSVG(from: url)
@@ -240,7 +240,8 @@ struct MaterialPanel: View {
     let panel = NSOpenPanel()
     panel.canChooseDirectories = false
     panel.canChooseFiles = true
-    panel.allowedFileTypes = ["png", "jpg", "jpeg", "tiff", "tif", "heic", "webp"]
+    panel.allowedContentTypes = ["png", "jpg", "jpeg", "tiff", "tif", "heic", "webp"]
+      .compactMap { UTType(filenameExtension: $0) }
     panel.allowsMultipleSelection = false
     guard panel.runModal() == .OK,
           let url = panel.url,

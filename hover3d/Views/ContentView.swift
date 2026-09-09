@@ -13,24 +13,23 @@ struct ContentView: View {
 
     var body: some View {
 
-      HStack(spacing: 0) {
+      NavigationSplitView {
         Editor()
-          .frame(minWidth: 300, idealWidth: 300, maxWidth: 300, maxHeight: .infinity)
-          .background(Color(NSColor.windowBackgroundColor))
+          .navigationSplitViewColumnWidth(min: 260, ideal: 300, max: 380)
+      } detail: {
+        HStack(spacing: 0) {
+          HoverView(sceneView: $model.sceneView, model: model)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .clipped()
 
-        Divider()
+          Divider()
 
-        HoverView(sceneView: $model.sceneView, model: model)
-          .frame(maxWidth: .infinity, maxHeight: .infinity)
-          .clipped()
-
-        Divider()
-
-        MaterialPanel()
-          .frame(width: model.materialPanelExpanded ? 300 : 56)
-          .frame(maxHeight: .infinity)
-
+          MaterialPanel()
+            .frame(width: model.materialPanelExpanded ? 300 : 56)
+            .frame(maxHeight: .infinity)
+        }
       }
+      .navigationSplitViewStyle(.balanced)
       .onAppear {
         let scene = SCNScene("cube")
         self.model.sceneView.scene = scene
