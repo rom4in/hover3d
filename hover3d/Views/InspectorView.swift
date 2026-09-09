@@ -10,15 +10,19 @@ struct InspectorView: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 12) {
-        Text("Material").font(.title3.weight(.semibold))
-            .frame(maxWidth: .infinity, alignment: .leading)
+      Text("Material")
+        .font(.title3.weight(.semibold))
+        .frame(maxWidth: .infinity, alignment: .leading)
 
+      geometriesList
+      materialsList
       materialControls
       Spacer(minLength: 12)
       exportControls
     }
     .padding(16)
     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    .background(Color.backgroundSecondary)
     .overlay(
       ShareMenu(isPresented: $isSharing, sharingItems: shareItems)
         .allowsHitTesting(isSharing)
@@ -31,24 +35,87 @@ struct InspectorView: View {
   }
 
   @ViewBuilder
-  private var materialControls: some View {
-    VStack(alignment: .leading, spacing: 12) {
-      Text(model.selectedGeometryNode?.name ?? "Click a shape to select it")
-        .font(.caption)
-        .foregroundColor(.textSecondary)
+  private var geometriesList: some View {
+    GroupBox("Geometries") {
+      ScrollView {
+        VStack(alignment: .leading, spacing: 2) {
+          ForEach(Array(model.geometryNodes.enumerated()), id: \.offset) { _, node in
+            Button {
+              model.select(node: node)
+            } label: {
+              HStack(spacing: 8) {
+                Image(systemName: "cube")
+                  .foregroundColor(.textSecondary)
+                Text(node.name ?? "Geometry")
+                  .lineLimit(1)
+                Spacer(minLength: 0)
+              }
+              .padding(.horizontal, 8)
+              .padding(.vertical, 5)
+              .contentShape(Rectangle())
+              .background(
+                RoundedRectangle(cornerRadius: 5)
+                  .fill(model.selectedGeometryNode === node ? Color.accentColor.opacity(0.18) : .clear)
+              )
+            }
+            .buttonStyle(.plain)
+          }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+      }
+      .frame(maxHeight: 180)
+    }
+  }
 
+  @ViewBuilder
+  private var materialsList: some View {
+    GroupBox("Materials") {
       HStack(spacing: 6) {
         ForEach(Array(DataModel.materialNames.enumerated()), id: \.offset) { index, name in
           Button(name.capitalized) { model.selectMaterial(index) }
             .buttonStyle(MaterialSlotButtonStyle(isSelected: model.selectedMaterialIndex == index))
         }
       }
+      .frame(maxWidth: .infinity)
+    }
+  }
+
+  @ViewBuilder
+  private var materialControls: some View {
+    VStack(alignment: .leading, spacing: 12) {
+      Text(model.selectedGeometryNode?.name ?? "Click a shape to select it")
+        .font(.caption)
+        .foregroundColor(.textSecondary)
 
       ColorPicker("Diffuse", selection: Binding(
         get: { model.diffuseColor },
         set: { model.setDiffuseColor($0) }
       ))
       .disabled(model.selectedGeometryNode == nil)
+
+      if !model.materialColorPresets.isEmpty {
+        VStack(alignment: .leading, spacing: 6) {
+          Text("Presets")
+            .font(.caption)
+            .foregroundColor(.textSecondary)
+
+          HStack(spacing: 8) {
+            ForEach(model.materialColorPresets) { preset in
+              Button {
+                model.setDiffuseColor(preset.color)
+              } label: {
+                Circle()
+                  .fill(preset.color)
+                  .frame(width: 22, height: 22)
+                  .overlay(Circle().strokeBorder(Color.primary.opacity(0.25), lineWidth: 1))
+              }
+              .buttonStyle(.plain)
+              .help(preset.name.capitalized)
+              .accessibilityLabel("Use \(preset.name) color")
+            }
+          }
+        }
+      }
 
       HStack {
         Button(action: openDiffuseImage) {

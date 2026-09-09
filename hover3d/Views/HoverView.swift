@@ -13,7 +13,7 @@ struct HoverView : NSViewRepresentable {
     sceneView.isJitteringEnabled = true
     sceneView.defaultCameraController.inertiaFriction = 0.18
     sceneView.antialiasingMode = .multisampling4X
-    sceneView.backgroundColor = .windowBackgroundColor
+    sceneView.backgroundColor = NSColor(Color.backgroundPrimary)
     let click = NSClickGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.selectSurface(_:)))
     sceneView.addGestureRecognizer(click)
 

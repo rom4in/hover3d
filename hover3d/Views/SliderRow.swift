@@ -7,7 +7,14 @@ struct SliderRow: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 6) {
       Text(title).font(.subheadline)
-      Slider(value: $value)
+      ValueBubbleSlider(value: percentageValue, accessibilityLabel: title)
     }
+  }
+
+  private var percentageValue: Binding<CGFloat> {
+    Binding(
+      get: { value * 100 },
+      set: { value = $0 / 100 }
+    )
   }
 }

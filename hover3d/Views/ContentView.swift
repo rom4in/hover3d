@@ -10,10 +10,12 @@ struct ContentView: View {
       NavigationSplitView {
         Editor()
           .navigationSplitViewColumnWidth(min: 260, ideal: 300, max: 380)
+          .background(Color.backgroundSecondary)
       } detail: {
         HoverView(sceneView: $model.sceneView, model: model)
           .frame(maxWidth: .infinity, maxHeight: .infinity)
           .clipped()
+          .background(Color.backgroundPrimary)
           .inspector(isPresented: $model.inspectorPresented) {
             InspectorView()
               .inspectorColumnWidth(min: 280, ideal: 320, max: 420)
@@ -30,6 +32,7 @@ struct ContentView: View {
           }
       }
       .navigationSplitViewStyle(.balanced)
+      .background(Color.backgroundPrimary)
       .onAppear {
         let scene = SCNScene("cube")
         self.model.sceneView.scene = scene
@@ -50,4 +53,3 @@ struct ContentView_Previews: PreviewProvider {
         ContentView()
     }
 }
-
