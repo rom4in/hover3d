@@ -21,7 +21,7 @@ struct Editor: View {
     }
     
     private var geometriesList: some View {
-        GroupBox("Geometries") {
+        GroupBox {
             ScrollView {
                 VStack(alignment: .leading, spacing: 2) {
                     ForEach(Array(model.geometryNodes.enumerated()), id: \.offset) { _, node in
@@ -31,12 +31,22 @@ struct Editor: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .frame(maxHeight: 180)
+            .focusable()
+            .focusEffectDisabled()
+            .onKeyPress(.upArrow, phases: .down) { keyPress in
+                model.moveSelection(by: -1, extendingSelection: keyPress.modifiers.contains(.shift))
+                return .handled
+            }
+            .onKeyPress(.downArrow, phases: .down) { keyPress in
+                model.moveSelection(by: 1, extendingSelection: keyPress.modifiers.contains(.shift))
+                return .handled
+            }
         }
     }
     
     private func geometryButton(for node: SCNNode) -> some View {
         Button {
-            model.select(node: node)
+            model.select(node: node, extendingSelection: NSEvent.modifierFlags.contains(.shift))
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: "cube")
@@ -50,17 +60,28 @@ struct Editor: View {
             .contentShape(Rectangle())
             .background(
                 RoundedRectangle(cornerRadius: 5)
-                    .fill(model.selectedGeometryNode === node ? Color.accentColor.opacity(0.18) : .clear)
+                    .fill(model.selectedGeometryNodes.contains(where: { $0 === node }) ? Color.accentColor.opacity(0.18) : .clear)
             )
         }
         .buttonStyle(.plain)
+        .focusable()
+        .focusEffectDisabled()
+        .onKeyPress(.upArrow, phases: .down) { keyPress in
+            model.moveSelection(by: -1, extendingSelection: keyPress.modifiers.contains(.shift))
+            return .handled
+        }
+        .onKeyPress(.downArrow, phases: .down) { keyPress in
+            model.moveSelection(by: 1, extendingSelection: keyPress.modifiers.contains(.shift))
+            return .handled
+        }
     }
     
     @ViewBuilder
     private var selectedGeometryControls: some View {
         if model.selectedGeometrySettings != nil {
-            GroupBox(model.selectedGeometryNode?.name ?? "Geometry") {
+            GroupBox {
                 VStack(alignment: .leading, spacing: 14) {
+                    SliderRow(title: "Chamfer radius", value: chamferRadiusBinding)
                     SliderRow(title: "Extrusion", value: extrusionBinding)
                     SliderRow(title: "Layer offset", value: layerOffsetBinding, range: -100...100)
                     Text("Mode").font(.subheadline.weight(.medium))
@@ -71,6 +92,19 @@ struct Editor: View {
                 .padding(.top, 4)
             }
         }
+    }
+
+    private var selectedGeometryTitle: String {
+        guard let selected = model.selectedGeometryNode else { return "Geometry" }
+        let count = model.selectedGeometryNodes.count
+        return count > 1 ? "\(count) Geometries (primary: \(selected.name ?? "Geometry"))" : (selected.name ?? "Geometry")
+    }
+
+    private var chamferRadiusBinding: Binding<CGFloat> {
+        Binding(
+            get: { (model.selectedGeometrySettings?.chamferRadius ?? 0) / 10 },
+            set: { model.updateSelectedChamferRadius($0 * 10) }
+        )
     }
     
     private var extrusionBinding: Binding<CGFloat> {
@@ -157,12 +191,12 @@ struct Editor: View {
     
     private func handleDrop(_ providers: [NSItemProvider]) -> Bool {
         guard let provider = providers.first else { return false }
-        provider.loadDataRepresentation(forTypeIdentifier: "public.file-url") { data, _ in
+        provider.loadDataRepresentation(forTypeIdentifier: "public.file-url") { [model] data, _ in
             guard let data,
                   let path = String(data: data, encoding: .utf8) else { return }
             let url = path.hasPrefix("file://") ? URL(string: path) : URL(fileURLWithPath: path)
             guard let url else { return }
-            DispatchQueue.main.async { model.importSVG(from: url) }
+            Task { @MainActor in model.importSVG(from: url) }
         }
         return true
     }

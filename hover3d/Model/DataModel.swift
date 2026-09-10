@@ -1,10 +1,12 @@
 import SwiftUI
 import SceneKit
 
-class DataModel : NSObject, ObservableObject {
+@MainActor
+final class DataModel: NSObject, ObservableObject {
 
   struct GeometrySettings {
     var extrusion: CGFloat
+    var chamferRadius: CGFloat
     var layerOffset: CGFloat
     var chamferMode: SCNChamferMode
     var chamferProfile: ChamferProfileType
@@ -16,6 +18,8 @@ class DataModel : NSObject, ObservableObject {
     let id: String
     let name: String
     let color: Color
+    let metalness: CGFloat
+    let roughness: CGFloat
   }
 
   @Published var sceneView = SCNView()
@@ -33,11 +37,13 @@ class DataModel : NSObject, ObservableObject {
   @Published var diffuseColor = Color.white
   @Published var selectedMaterialIndex = 0
   @Published var selectedGeometryNode: SCNNode?
+  @Published private(set) var selectedGeometryNodes: [SCNNode] = []
   @Published private(set) var selectedGeometrySettings: GeometrySettings?
   @Published var materialImageName: String?
   @Published var inspectorPresented = false
 
   private var geometrySettings: [ObjectIdentifier: GeometrySettings] = [:]
+  private weak var selectionAnchorNode: SCNNode?
 
   @Published var svgSize = CGSize()
   @Published var fileName = "SceneShape"
@@ -78,6 +84,15 @@ class DataModel : NSObject, ObservableObject {
     return geometry.materials[selectedMaterialIndex]
   }
 
+  private var selectedMaterials: [SCNMaterial] {
+    let nodes = selectedGeometryNodes.isEmpty ? selectedGeometryNode.map { [$0] } ?? [] : selectedGeometryNodes
+    return nodes.compactMap { node in
+      guard let materials = node.geometry?.materials,
+            materials.indices.contains(selectedMaterialIndex) else { return nil }
+      return materials[selectedMaterialIndex]
+    }
+  }
+
   var geometryNodes: [SCNNode] {
     var nodes: [SCNNode] = []
 
@@ -92,23 +107,52 @@ class DataModel : NSObject, ObservableObject {
     return nodes
   }
 
-  var materialColorPresets: [MaterialColorPreset] {
-    guard let materials = selectedGeometryNode?.geometry?.materials else { return [] }
-
+  var diffuseColorPresets: [MaterialColorPreset] {
     var seenColors = Set<String>()
-    return materials.enumerated().compactMap { index, material in
-      guard let nsColor = material.diffuse.contents as? NSColor,
+    return geometryNodes.flatMap { node in
+      node.geometry?.materials.enumerated().compactMap { index, material in
+        guard let nsColor = diffuseNSColor(from: material.diffuse.contents),
             let rgbColor = nsColor.usingColorSpace(.deviceRGB) else { return nil }
 
-      let key = [rgbColor.redComponent, rgbColor.greenComponent, rgbColor.blueComponent,
-                 rgbColor.alphaComponent]
-        .map { String(format: "%.4f", $0) }
-        .joined(separator: ",")
-      guard seenColors.insert(key).inserted else { return nil }
+        let key = [rgbColor.redComponent, rgbColor.greenComponent, rgbColor.blueComponent,
+                   rgbColor.alphaComponent]
+          .map { String(format: "%.4f", $0) }
+          .joined(separator: ",")
+        guard seenColors.insert(key).inserted else { return nil }
 
-      let materialName = material.name ?? (Self.materialNames.indices.contains(index) ? Self.materialNames[index] : "Material")
-      return MaterialColorPreset(id: key, name: materialName, color: Color(nsColor: nsColor))
+        let materialName = material.name ?? (Self.materialNames.indices.contains(index) ? Self.materialNames[index] : "Material")
+        return MaterialColorPreset(id: key, name: materialName, color: Color(nsColor: nsColor),
+                                   metalness: numericMaterialValue(material.metalness.contents),
+                                   roughness: numericMaterialValue(material.roughness.contents))
+      } ?? []
     }
+  }
+
+  var materialPresets: [MaterialColorPreset] {
+    var seenMaterials = Set<String>()
+    return geometryNodes.flatMap { node in
+      node.geometry?.materials.enumerated().compactMap { index, material in
+        guard let nsColor = diffuseNSColor(from: material.diffuse.contents),
+              let rgbColor = nsColor.usingColorSpace(.deviceRGB) else { return nil }
+
+        let metalness = numericMaterialValue(material.metalness.contents)
+        let roughness = numericMaterialValue(material.roughness.contents)
+        let colorKey = [rgbColor.redComponent, rgbColor.greenComponent, rgbColor.blueComponent,
+                        rgbColor.alphaComponent]
+          .map { String(format: "%.4f", $0) }
+          .joined(separator: ",")
+        let key = "\(colorKey),\(String(format: "%.4f", metalness)),\(String(format: "%.4f", roughness))"
+        guard seenMaterials.insert(key).inserted else { return nil }
+
+        let materialName = material.name ?? (Self.materialNames.indices.contains(index) ? Self.materialNames[index] : "Material")
+        return MaterialColorPreset(id: key, name: materialName, color: Color(nsColor: nsColor),
+                                   metalness: metalness, roughness: roughness)
+      } ?? []
+    }
+  }
+
+  private func diffuseNSColor(from contents: Any?) -> NSColor? {
+    contents as? NSColor
   }
 
   func materials(from source: SCNMaterial) -> [SCNMaterial] {
@@ -129,9 +173,27 @@ class DataModel : NSObject, ObservableObject {
     node.childNodes.forEach(ensureFourMaterials)
   }
 
-  func select(node: SCNNode, material index: Int? = nil) {
-    guard node.geometry != nil else { return }
+  func select(node: SCNNode, material index: Int? = nil, extendingSelection: Bool = false) {
+    // AppKit input callbacks can arrive during SwiftUI view updates. Enqueue
+    // the entire selection transaction so its published state changes together.
+    Task { @MainActor [weak self] in
+      self?.applySelection(node: node, material: index, extendingSelection: extendingSelection)
+    }
+  }
+
+  private func applySelection(node: SCNNode, material index: Int? = nil, extendingSelection: Bool) {
+    let nodes = geometryNodes
+    // An import may have replaced the scene before the queued selection runs.
+    guard node.geometry != nil, nodes.contains(where: { $0 === node }) else { return }
     ensureFourMaterials(in: node)
+    if extendingSelection, let anchor = selectionAnchorNode,
+       let anchorIndex = nodes.firstIndex(where: { $0 === anchor }),
+       let nodeIndex = nodes.firstIndex(where: { $0 === node }) {
+      selectedGeometryNodes = Array(nodes[min(anchorIndex, nodeIndex)...max(anchorIndex, nodeIndex)])
+    } else {
+      selectedGeometryNodes = [node]
+      selectionAnchorNode = node
+    }
     selectedGeometryNode = node
     selectedGeometrySettings = settings(for: node)
     selectedMaterialIndex = min(max(index ?? selectedMaterialIndex, 0), Self.materialNames.count - 1)
@@ -139,10 +201,28 @@ class DataModel : NSObject, ObservableObject {
     refreshMaterialControls()
   }
 
+  func moveSelection(by offset: Int, extendingSelection: Bool) {
+    Task { @MainActor [weak self] in
+      guard let self else { return }
+      let nodes = geometryNodes
+      guard !nodes.isEmpty else { return }
+      let current = selectedGeometryNode.flatMap { node in nodes.firstIndex(where: { $0 === node }) } ?? 0
+      let destination = min(max(current + offset, 0), nodes.count - 1)
+      applySelection(node: nodes[destination], extendingSelection: extendingSelection)
+    }
+  }
+
   func updateSelectedExtrusion(_ value: CGFloat) {
     updateSelectedGeometry { node, settings in
       settings.extrusion = min(max(value, 0), 100)
       (node.geometry as? SCNShape)?.extrusionDepth = settings.extrusion
+    }
+  }
+
+  func updateSelectedChamferRadius(_ value: CGFloat) {
+    updateSelectedGeometry { node, settings in
+      settings.chamferRadius = min(max(value, 0), 100)
+      (node.geometry as? SCNShape)?.chamferRadius = settings.chamferRadius
     }
   }
 
@@ -174,6 +254,7 @@ class DataModel : NSObject, ObservableObject {
     let shape = node.geometry as? SCNShape
     let settings = GeometrySettings(
       extrusion: shape?.extrusionDepth ?? extrusion,
+      chamferRadius: shape?.chamferRadius ?? chamferRadius,
       layerOffset: node.position.z,
       chamferMode: shape?.chamferMode ?? chamferMode,
       chamferProfile: chamferProfile
@@ -185,27 +266,31 @@ class DataModel : NSObject, ObservableObject {
   private func updateSelectedGeometry(
     _ update: (SCNNode, inout GeometrySettings) -> Void
   ) {
-    guard let node = selectedGeometryNode,
-          var settings = selectedGeometrySettings else { return }
-    let oldSettings = settings
-    update(node, &settings)
-    guard settings.extrusion != oldSettings.extrusion ||
-          settings.layerOffset != oldSettings.layerOffset ||
-          settings.chamferMode != oldSettings.chamferMode ||
-          settings.chamferProfile != oldSettings.chamferProfile else { return }
-    registerGeometryChange(for: node, from: oldSettings, to: settings)
-    geometrySettings[ObjectIdentifier(node)] = settings
-    selectedGeometrySettings = settings
+    let nodes = selectedGeometryNodes.isEmpty ? selectedGeometryNode.map { [$0] } ?? [] : selectedGeometryNodes
+    let changes = nodes.compactMap { node -> (SCNNode, GeometrySettings, GeometrySettings)? in
+      var settings = self.settings(for: node)
+      let oldSettings = settings
+      update(node, &settings)
+      let changed = settings.extrusion != oldSettings.extrusion ||
+        settings.chamferRadius != oldSettings.chamferRadius ||
+        settings.layerOffset != oldSettings.layerOffset ||
+        settings.chamferMode != oldSettings.chamferMode ||
+        settings.chamferProfile != oldSettings.chamferProfile
+      guard changed else { return nil }
+      geometrySettings[ObjectIdentifier(node)] = settings
+      return (node, oldSettings, settings)
+    }
+    guard !changes.isEmpty else { return }
+    registerGeometryChanges(changes)
+    if let selectedGeometryNode {
+      selectedGeometrySettings = settings(for: selectedGeometryNode)
+    }
   }
 
-  private func registerGeometryChange(
-    for node: SCNNode,
-    from oldSettings: GeometrySettings,
-    to newSettings: GeometrySettings
-  ) {
+  private func registerGeometryChanges(_ changes: [(SCNNode, GeometrySettings, GeometrySettings)]) {
     undoManager.registerUndo(withTarget: self) { target in
-      target.registerGeometryChange(for: node, from: newSettings, to: oldSettings)
-      target.applyGeometrySettings(newSettings, to: node)
+      target.registerGeometryChanges(changes.map { ($0.0, $0.2, $0.1) })
+      changes.forEach { target.applyGeometrySettings($0.1, to: $0.0) }
     }
     undoManager.setActionName("Change Geometry")
     undoState += 1
@@ -214,6 +299,7 @@ class DataModel : NSObject, ObservableObject {
   private func applyGeometrySettings(_ settings: GeometrySettings, to node: SCNNode) {
     if let shape = node.geometry as? SCNShape {
       shape.extrusionDepth = settings.extrusion
+      shape.chamferRadius = settings.chamferRadius
       shape.chamferMode = settings.chamferMode
       shape.chamferProfile = settings.chamferProfile.getBezierPath()
     }
@@ -233,81 +319,159 @@ class DataModel : NSObject, ObservableObject {
   }
 
   func setDiffuseColor(_ color: Color) {
-    guard let material = selectedMaterial else { return }
-    let oldContents = material.diffuse.contents
-    let oldImageName = materialImageName
+    let materials = selectedMaterials
+    guard !materials.isEmpty else { return }
+    let newContents = NSColor(color)
+    let changes = materials.map { material in
+      (material, material.diffuse.contents, materialImageName, newContents as Any?, nil as String?)
+    }
     diffuseColor = color
-    material.diffuse.contents = NSColor(color)
+    materials.forEach { $0.diffuse.contents = newContents }
     materialImageName = nil
-    registerMaterialChange(material, oldContents: oldContents, oldImageName: oldImageName,
-                           newContents: material.diffuse.contents, newImageName: nil)
+    registerMaterialChanges(changes)
+  }
+
+  func setMaterialPreset(_ preset: MaterialColorPreset) {
+    let materials = selectedMaterials
+    guard !materials.isEmpty else { return }
+
+    let newDiffuse = NSColor(preset.color)
+    let changes = materials.map { material in
+      MaterialPresetChange(
+        material: material,
+        oldDiffuse: material.diffuse.contents,
+        oldImageName: materialImageName,
+        oldMetalness: numericMaterialValue(material.metalness.contents),
+        oldRoughness: numericMaterialValue(material.roughness.contents),
+        newDiffuse: newDiffuse,
+        newImageName: nil,
+        newMetalness: preset.metalness,
+        newRoughness: preset.roughness
+      )
+    }
+
+    materials.forEach {
+      $0.diffuse.contents = newDiffuse
+      $0.metalness.contents = preset.metalness
+      $0.roughness.contents = preset.roughness
+    }
+    diffuseColor = preset.color
+    metalness = preset.metalness
+    roughness = preset.roughness
+    materialImageName = nil
+    registerMaterialPresetChanges(changes)
   }
 
   func setDiffuseImage(_ image: NSImage, named name: String) {
-    guard let material = selectedMaterial else { return }
-    let oldContents = material.diffuse.contents
-    let oldImageName = materialImageName
-    material.diffuse.contents = image
+    let materials = selectedMaterials
+    guard !materials.isEmpty else { return }
+    let changes = materials.map { material in
+      (material, material.diffuse.contents, materialImageName, image as Any?, name as String?)
+    }
+    materials.forEach { $0.diffuse.contents = image }
     materialImageName = name
-    registerMaterialChange(material, oldContents: oldContents, oldImageName: oldImageName,
-                           newContents: image, newImageName: name)
+    registerMaterialChanges(changes)
   }
 
   func clearDiffuseImage() {
-    guard let material = selectedMaterial else { return }
-    let oldContents = material.diffuse.contents
-    let oldImageName = materialImageName
-    material.diffuse.contents = NSColor(diffuseColor)
+    let materials = selectedMaterials
+    guard !materials.isEmpty else { return }
+    let newContents = NSColor(diffuseColor)
+    let changes = materials.map { material in
+      (material, material.diffuse.contents, materialImageName, newContents as Any?, nil as String?)
+    }
+    materials.forEach { $0.diffuse.contents = newContents }
     materialImageName = nil
-    registerMaterialChange(material, oldContents: oldContents, oldImageName: oldImageName,
-                           newContents: material.diffuse.contents, newImageName: nil)
+    registerMaterialChanges(changes)
   }
 
   func updateSelectedMetalness(_ value: CGFloat) {
     let clamped = min(max(value, 0), 1)
-    guard let material = selectedMaterial, metalness != clamped else { return }
-    let oldValue = metalness
+    let materials = selectedMaterials
+    guard !materials.isEmpty,
+          metalness != clamped || materials.contains(where: { numericMaterialValue($0.metalness.contents) != clamped }) else { return }
+    let changes = materials.map { ($0, numericMaterialValue($0.metalness.contents), clamped) }
     metalness = clamped
-    material.metalness.contents = clamped
-    registerNumericMaterialChange(material, keyPath: "metalness", from: oldValue, to: clamped)
+    materials.forEach { $0.metalness.contents = clamped }
+    registerNumericMaterialChanges(changes, keyPath: "metalness")
   }
 
   func updateSelectedRoughness(_ value: CGFloat) {
     let clamped = min(max(value, 0), 1)
-    guard let material = selectedMaterial, roughness != clamped else { return }
-    let oldValue = roughness
+    let materials = selectedMaterials
+    guard !materials.isEmpty,
+          roughness != clamped || materials.contains(where: { numericMaterialValue($0.roughness.contents) != clamped }) else { return }
+    let changes = materials.map { ($0, numericMaterialValue($0.roughness.contents), clamped) }
     roughness = clamped
-    material.roughness.contents = clamped
-    registerNumericMaterialChange(material, keyPath: "roughness", from: oldValue, to: clamped)
+    materials.forEach { $0.roughness.contents = clamped }
+    registerNumericMaterialChanges(changes, keyPath: "roughness")
   }
 
-  private func registerMaterialChange(_ material: SCNMaterial, oldContents: Any?, oldImageName: String?,
-                                      newContents: Any?, newImageName: String?) {
+  private func registerMaterialChanges(_ changes: [(SCNMaterial, Any?, String?, Any?, String?)]) {
     undoManager.registerUndo(withTarget: self) { target in
-      target.registerMaterialChange(material, oldContents: newContents, oldImageName: newImageName,
-                                    newContents: oldContents, newImageName: oldImageName)
-      material.diffuse.contents = oldContents
-      target.materialImageName = oldImageName
+      target.registerMaterialChanges(changes.map { ($0.0, $0.3, $0.4, $0.1, $0.2) })
+      changes.forEach { $0.0.diffuse.contents = $0.1 }
+      target.materialImageName = changes.first?.2
       target.refreshMaterialControls()
     }
     undoManager.setActionName("Change Material")
     undoState += 1
   }
 
-  private func registerNumericMaterialChange(_ material: SCNMaterial, keyPath: String,
-                                             from oldValue: CGFloat, to newValue: CGFloat) {
+  private struct MaterialPresetChange {
+    let material: SCNMaterial
+    let oldDiffuse: Any?
+    let oldImageName: String?
+    let oldMetalness: CGFloat
+    let oldRoughness: CGFloat
+    let newDiffuse: Any?
+    let newImageName: String?
+    let newMetalness: CGFloat
+    let newRoughness: CGFloat
+  }
+
+  private func registerMaterialPresetChanges(_ changes: [MaterialPresetChange]) {
     undoManager.registerUndo(withTarget: self) { target in
-      target.registerNumericMaterialChange(material, keyPath: keyPath, from: newValue, to: oldValue)
-      if keyPath == "metalness" {
-        material.metalness.contents = oldValue
-        target.metalness = oldValue
-      } else {
-        material.roughness.contents = oldValue
-        target.roughness = oldValue
+      target.registerMaterialPresetChanges(changes.map {
+        MaterialPresetChange(
+          material: $0.material,
+          oldDiffuse: $0.newDiffuse,
+          oldImageName: $0.newImageName,
+          oldMetalness: $0.newMetalness,
+          oldRoughness: $0.newRoughness,
+          newDiffuse: $0.oldDiffuse,
+          newImageName: $0.oldImageName,
+          newMetalness: $0.oldMetalness,
+          newRoughness: $0.oldRoughness
+        )
+      })
+      changes.forEach {
+        $0.material.diffuse.contents = $0.oldDiffuse
+        $0.material.metalness.contents = $0.oldMetalness
+        $0.material.roughness.contents = $0.oldRoughness
       }
+      target.materialImageName = changes.first?.oldImageName
+      target.refreshMaterialControls()
+    }
+    undoManager.setActionName("Apply Material Preset")
+    undoState += 1
+  }
+
+  private func registerNumericMaterialChanges(_ changes: [(SCNMaterial, CGFloat, CGFloat)], keyPath: String) {
+    undoManager.registerUndo(withTarget: self) { target in
+      target.registerNumericMaterialChanges(changes.map { ($0.0, $0.2, $0.1) }, keyPath: keyPath)
+      changes.forEach { change in
+        if keyPath == "metalness" { change.0.metalness.contents = change.1 }
+        else { change.0.roughness.contents = change.1 }
+      }
+      target.refreshMaterialControls()
     }
     undoManager.setActionName("Change Material")
     undoState += 1
+  }
+
+  private func numericMaterialValue(_ value: Any?) -> CGFloat {
+    value as? CGFloat ?? (value as? NSNumber).map(CGFloat.init(truncating:)) ?? 0
   }
 
   private func refreshMaterialControls() {
@@ -330,6 +494,8 @@ class DataModel : NSObject, ObservableObject {
     fileName = url.deletingPathExtension().lastPathComponent
     importedSVGImage = NSImage(contentsOf: url)
     selectedGeometryNode = nil
+    selectedGeometryNodes = []
+    selectionAnchorNode = nil
     selectedGeometrySettings = nil
     geometrySettings.removeAll()
     guard let data = try? Data(contentsOf: url) else { return }

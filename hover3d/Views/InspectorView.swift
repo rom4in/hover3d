@@ -62,8 +62,8 @@ struct InspectorView: View {
       ))
       .disabled(model.selectedGeometryNode == nil)
 
-      if !model.materialColorPresets.isEmpty {
-        materialPresets
+      if !model.diffuseColorPresets.isEmpty {
+        diffuseColorPresets
       }
 
       HStack {
@@ -87,17 +87,21 @@ struct InspectorView: View {
         set: { model.updateSelectedRoughness($0) }
       ))
       .disabled(model.selectedGeometryNode == nil)
+
+      if !model.materialPresets.isEmpty {
+        materialPresets
+      }
     }
   }
 
-  private var materialPresets: some View {
+  private var diffuseColorPresets: some View {
     VStack(alignment: .leading, spacing: 6) {
       Text("Presets")
         .font(.caption)
         .foregroundColor(.textSecondary)
 
       HStack(spacing: 8) {
-        ForEach(model.materialColorPresets) { preset in
+        ForEach(model.diffuseColorPresets) { preset in
           Button {
             model.setDiffuseColor(preset.color)
           } label: {
@@ -108,8 +112,54 @@ struct InspectorView: View {
           }
           .buttonStyle(.plain)
           .help(preset.name.capitalized)
-          .accessibilityLabel("Use \(preset.name) color")
+          .accessibilityLabel("Use (preset.name) color")
         }
+      }
+    }
+  }
+
+  private var materialPresets: some View {
+    GroupBox("Material presets") {
+      ScrollView(.horizontal, showsIndicators: false) {
+        HStack(spacing: 10) {
+          ForEach(model.materialPresets) { preset in
+            Button {
+              model.setMaterialPreset(preset)
+            } label: {
+              Circle()
+                .fill(preset.color)
+                .overlay {
+                  Circle()
+                    .fill(
+                      RadialGradient(
+                        colors: [.white.opacity(0.7), .clear],
+                        center: .topLeading,
+                        startRadius: 0,
+                        endRadius: 24
+                      )
+                    )
+                }
+                .overlay {
+                  Circle()
+                    .fill(
+                      RadialGradient(
+                        colors: [.clear, .black.opacity(0.45)],
+                        center: .bottomTrailing,
+                        startRadius: 8,
+                        endRadius: 24
+                      )
+                    )
+                }
+                .overlay(Circle().strokeBorder(Color.primary.opacity(0.25), lineWidth: 1))
+                .frame(width: 34, height: 34)
+                .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
+            }
+            .buttonStyle(.plain)
+            .help(preset.name.capitalized)
+            .accessibilityLabel("Use \(preset.name) color")
+          }
+        }
+        .padding(.vertical, 3)
       }
     }
   }

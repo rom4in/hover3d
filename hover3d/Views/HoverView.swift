@@ -24,6 +24,7 @@ struct HoverView : NSViewRepresentable {
 
   func makeCoordinator() -> Coordinator { Coordinator(model: model) }
 
+  @MainActor
   final class Coordinator: NSObject {
     let model: DataModel
 
@@ -43,7 +44,14 @@ struct HoverView : NSViewRepresentable {
       } else {
         materialIndex = 2
       }
-      model.select(node: hit.node, material: materialIndex)
+      let extendsSelection = NSEvent.modifierFlags.contains(.shift)
+      model.select(node: hit.node, material: materialIndex,
+                   extendingSelection: extendsSelection)
     }
   }
+}
+
+#Preview {
+  let model = DataModel()
+  HoverView(sceneView: .constant(model.sceneView), model: model)
 }

@@ -9,7 +9,8 @@
 import SwiftUI
 import SceneKit
 
-extension DataModel : XMLParserDelegate {
+// XMLParser invokes its delegate synchronously from importSVG on the main actor.
+extension DataModel: @preconcurrency XMLParserDelegate {
 
   func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
 

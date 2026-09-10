@@ -22,7 +22,7 @@ struct ShareMenu: NSViewRepresentable {
             let picker = NSSharingServicePicker(items: sharingItems)
             picker.delegate = context.coordinator
 
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 picker.show(relativeTo: .zero, of: nsView, preferredEdge: .minY)
             }
         }
@@ -32,7 +32,9 @@ struct ShareMenu: NSViewRepresentable {
         Coordinator(owner: self)
     }
 
-    class Coordinator: NSObject, NSSharingServicePickerDelegate {
+    // AppKit delivers picker callbacks on the main thread.
+    @MainActor
+    final class Coordinator: NSObject, @preconcurrency NSSharingServicePickerDelegate {
         let owner: ShareMenu
 
         init(owner: ShareMenu) {
@@ -47,4 +49,8 @@ struct ShareMenu: NSViewRepresentable {
             self.owner.isPresented = false        // << dismiss
         }
     }
+}
+
+#Preview {
+    ShareMenu(isPresented: .constant(false), sharingItems: [])
 }
